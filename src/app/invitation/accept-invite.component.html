@@ -1,0 +1,168 @@
+<section class="login-panel invite-panel" aria-labelledby="invite-title">
+  <div class="invite-content">
+    <a class="brand brand-mobile" routerLink="/login" aria-label="IBG Gestão">ibg</a>
+
+    @if (view() === 'loading') {
+      <div class="invite-state" aria-live="polite">
+        <span class="invite-loader" aria-hidden="true"></span>
+        <p>Verificando seu convite...</p>
+      </div>
+    } @else if (view() === 'unavailable') {
+      <div class="invite-state" role="alert">
+        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <h1 id="invite-title">Convite não encontrado</h1>
+        <p>
+          Este link é inválido ou não está mais disponível. Peça um novo convite ao administrador da
+          igreja.
+        </p>
+        <a class="invite-back-link" routerLink="/login">Voltar para o acesso</a>
+      </div>
+    } @else if (view() === 'error') {
+      <div class="invite-state" role="alert">
+        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <h1 id="invite-title">Não foi possível verificar o convite</h1>
+        <p>{{ feedback() }}</p>
+        <button class="invite-retry-button" type="button" (click)="loadPreview()">
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (view() === 'expired') {
+      <div class="invite-state" role="alert">
+        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <h1 id="invite-title">Convite indisponível</h1>
+        <p>
+          Este convite expirou, foi revogado ou já foi utilizado. Peça um novo link ao administrador
+          da igreja.
+        </p>
+        <a class="invite-back-link" routerLink="/login">Voltar para o acesso</a>
+      </div>
+    } @else if (view() === 'success') {
+      <div class="invite-state invite-success" role="status">
+        <span class="invite-success-icon" aria-hidden="true">✓</span>
+        <span class="invite-eyebrow">ACESSO CONFIRMADO</span>
+        <h1 id="invite-title">Convite aceito!</h1>
+        <p>
+          Seu acesso à <strong>{{ invitation()?.tenant?.name }}</strong> foi ativado. Você já pode
+          entrar usando o e-mail <strong>{{ invitation()?.email }}</strong>.
+        </p>
+        <a class="invite-submit-button" routerLink="/login">Ir para o login</a>
+      </div>
+    } @else {
+      @if (invitation(); as invite) {
+        <header class="invite-header">
+          <span class="invite-eyebrow">ACESSO À IGREJA</span>
+          <h1 id="invite-title">Você foi convidado</h1>
+          <p>Crie seu acesso à {{ invite.tenant.name }}.</p>
+        </header>
+
+        <section class="invite-summary" aria-label="Detalhes do convite">
+          <strong class="invite-email">{{ invite.email }}</strong>
+          <p class="invite-role">
+            Perfil: {{ invite.roles.map(roleLabel).join(', ') }}
+            <span aria-hidden="true"> · </span>
+            Convite válido até {{ formatDate(invite.expiresAt) }}
+          </p>
+          <p class="invite-one-time">Este convite é pessoal e só pode ser usado uma vez.</p>
+        </section>
+
+        @if (invite.accountExists) {
+          <div class="existing-account-note">
+            Este e-mail já possui uma conta. Entre com a senha dessa conta para confirmar o convite.
+          </div>
+        }
+
+        <form class="invite-form" [formGroup]="form" (ngSubmit)="acceptInvitation()" novalidate>
+          @if (!invite.accountExists) {
+            <div class="invite-field">
+              <label for="display-name">Nome de exibição</label>
+              <input
+                id="display-name"
+                type="text"
+                formControlName="displayName"
+                autocomplete="name"
+                placeholder="Seu nome"
+                [attr.aria-invalid]="
+                  form.controls.displayName.touched && form.controls.displayName.invalid
+                "
+                [attr.aria-describedby]="
+                  form.controls.displayName.touched && form.controls.displayName.invalid
+                    ? 'display-name-error'
+                    : null
+                "
+              />
+              @if (form.controls.displayName.touched && form.controls.displayName.invalid) {
+                <span class="invite-field-error" id="display-name-error"
+                  >Informe seu nome (mínimo 2 caracteres).</span
+                >
+              }
+            </div>
+          }
+
+          <div class="invite-field">
+            <label for="invite-password">{{
+              invite.accountExists ? 'Senha da sua conta' : 'Senha'
+            }}</label>
+            <div class="invite-password-input">
+              <input
+                id="invite-password"
+                [type]="passwordVisible() ? 'text' : 'password'"
+                formControlName="password"
+                [autocomplete]="invite.accountExists ? 'current-password' : 'new-password'"
+                [placeholder]="invite.accountExists ? 'Digite sua senha' : 'Crie uma senha'"
+                [attr.aria-invalid]="
+                  form.controls.password.touched && form.controls.password.invalid
+                "
+                [attr.aria-describedby]="
+                  form.controls.password.touched && form.controls.password.invalid
+                    ? 'invite-password-error'
+                    : 'password-hint'
+                "
+              />
+              <button
+                class="invite-visibility-button"
+                type="button"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="passwordVisible() ? 'Ocultar senha' : 'Mostrar senha'"
+                [attr.aria-pressed]="passwordVisible()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2.5 12s3.2-6 9.5-6 9.5 6 9.5 6-3.2 6-9.5 6-9.5-6-9.5-6Z" />
+                  <circle cx="12" cy="12" r="2.5" />
+                </svg>
+              </button>
+            </div>
+            @if (form.controls.password.touched && form.controls.password.invalid) {
+              <span class="invite-field-error" id="invite-password-error">
+                A senha precisa ter ao menos 8 caracteres, com uma letra e um número.
+              </span>
+            } @else if (!invite.accountExists) {
+              <span class="invite-field-hint" id="password-hint"
+                >Mínimo de 8 caracteres, com letra e número.</span
+              >
+            }
+          </div>
+
+          @if (feedback()) {
+            <p class="invite-feedback" role="alert">{{ feedback() }}</p>
+          }
+
+          <button class="invite-submit-button" type="submit" [disabled]="isSubmitting()">
+            {{
+              isSubmitting()
+                ? invite.accountExists
+                  ? 'Confirmando convite...'
+                  : 'Criando acesso...'
+                : invite.accountExists
+                  ? 'Entrar e aceitar convite'
+                  : 'Aceitar convite e criar acesso'
+            }}
+          </button>
+        </form>
+
+        <p class="invite-terms">Ao continuar, você concorda com os termos e a privacidade.</p>
+      }
+    }
+  </div>
+
+  <footer class="invite-footer">IBG Gestão · Acesso protegido</footer>
+</section>

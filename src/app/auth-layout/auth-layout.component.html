@@ -1,0 +1,43 @@
+<main class="login-page" [class.invite-page]="isInviteRoute()">
+  <section class="welcome-panel" aria-label="Sobre o IBG Gestão">
+    <a class="brand brand-light" routerLink="/login" aria-label="IBG Gestão, início">ibg</a>
+
+    <div class="welcome-content">
+      <span class="eyebrow">GESTÃO QUE ACOLHE</span>
+      <h1>Mais tempo para<br />cuidar de pessoas.</h1>
+      <p class="welcome-copy">
+        Uma gestão simples, segura e transparente<br class="desktop-break" />
+        para a missão da sua igreja.
+      </p>
+
+      <div class="community-card">
+        <p class="community-eyebrow">SUA COMUNIDADE, EM EQUILÍBRIO</p>
+        <h2>Tudo conectado. Tudo mais claro.</h2>
+        <ul>
+          <li>
+            <span class="number">01</span><strong>Pessoas</strong
+            ><span>Membros e equipe em um só lugar.</span>
+          </li>
+          <li>
+            <span class="number">02</span><strong>Finanças</strong
+            ><span>Cada entrada e saída bem organizada.</span>
+          </li>
+          <li>
+            <span class="number">03</span><strong>Transparência</strong
+            ><span>Histórico e relatórios para decidir melhor.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="privacy-note">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="6" y="10" width="12" height="10" rx="1" />
+        <path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3" />
+      </svg>
+      Acesso protegido. Dados da sua igreja, só da sua igreja.
+    </p>
+  </section>
+
+  <router-outlet />
+</main>

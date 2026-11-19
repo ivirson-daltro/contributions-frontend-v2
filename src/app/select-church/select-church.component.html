@@ -1,0 +1,48 @@
+<main class="select-church-page">
+  <section class="select-church-card" aria-labelledby="select-church-title">
+    <a class="brand select-church-brand" routerLink="/login" aria-label="IBG Gestão">ibg</a>
+
+    <header>
+      <p class="select-church-eyebrow">SEU ACESSO</p>
+      <h1 id="select-church-title">Escolha uma igreja</h1>
+      <p class="select-church-description">Selecione a igreja que deseja acessar com sua conta.</p>
+    </header>
+
+    @if (isLoading()) {
+      <p class="select-church-message" role="status">Carregando suas igrejas...</p>
+    } @else if (memberships().length > 0) {
+      <fieldset class="church-options">
+        <legend class="visually-hidden">Igrejas disponíveis</legend>
+        @for (membership of memberships(); track membership.tenantId) {
+          <label class="church-option">
+            <input
+              type="radio"
+              name="church"
+              [value]="membership.tenantId"
+              [checked]="selectedTenantId() === membership.tenantId"
+              (change)="selectedTenantId.set(membership.tenantId); feedback.set('')"
+            />
+            <span class="church-option-copy">
+              <strong>{{ membership.name }}</strong>
+              <span>{{ membership.slug }}</span>
+            </span>
+          </label>
+        }
+      </fieldset>
+
+      <button
+        class="submit-button select-church-submit"
+        type="button"
+        [disabled]="!selectedTenantId()"
+        (click)="selectChurch()"
+      >
+        <span>Selecionar igreja</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+      </button>
+    }
+
+    @if (feedback()) {
+      <p class="select-church-message" role="status">{{ feedback() }}</p>
+    }
+  </section>
+</main>

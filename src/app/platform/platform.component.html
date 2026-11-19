@@ -1,0 +1,414 @@
+<main class="platform-page">
+  <header class="platform-header">
+    <a class="platform-brand" routerLink="/platform" aria-label="IBG Gestão">ibg</a>
+    <div class="platform-header-copy">
+      <span>CONSOLE DA PLATAFORMA</span>
+      <h1>Gestão de igrejas</h1>
+    </div>
+    <button class="platform-text-button" type="button" (click)="signOut()">Sair</button>
+  </header>
+
+  @if (view() === 'loading') {
+    <section class="platform-state" aria-live="polite">
+      <span class="loading-indicator" aria-hidden="true"></span>
+      <p>Carregando dados da plataforma...</p>
+    </section>
+  } @else if (view() === 'denied') {
+    <section class="platform-state platform-denied" role="alert">
+      <h2>Acesso não disponível</h2>
+      <p>{{ feedback() }}</p>
+      <button class="platform-primary-button" type="button" (click)="signOut()">
+        Voltar ao login
+      </button>
+    </section>
+  } @else if (view() === 'enroll' || view() === 'verify') {
+    <section class="platform-state mfa-panel">
+      <span class="platform-eyebrow">VERIFICAÇÃO DE SEGURANÇA</span>
+      @if (view() === 'enroll') {
+        <h2>Proteja o acesso à plataforma</h2>
+        <p>Administradores globais precisam cadastrar a verificação em duas etapas.</p>
+        <button class="platform-primary-button" type="button" (click)="startTotpEnrollment()">
+          Configurar autenticador
+        </button>
+      } @else {
+        @if (totpQrCode()) {
+          <h2>Cadastre seu autenticador</h2>
+          <p>Leia o QR code no aplicativo autenticador ou informe a chave manualmente.</p>
+          <img class="totp-qr" [src]="totpQrCode()" alt="QR code para cadastro de MFA" />
+          <label class="totp-secret-label" for="totp-secret">Chave de configuração</label>
+          <input id="totp-secret" class="totp-secret" [value]="totpSecret()" readonly />
+        } @else {
+          <h2>Verificação de segurança</h2>
+          <p>Informe o código de seis dígitos do seu autenticador.</p>
+        }
+        <form class="mfa-code-form" [formGroup]="mfaForm" (ngSubmit)="verifyTotp()" novalidate>
+          <label for="mfa-code">Código de verificação</label>
+          <input
+            id="mfa-code"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            formControlName="code"
+            placeholder="000000"
+            [attr.aria-invalid]="mfaForm.controls.code.touched && mfaForm.controls.code.invalid"
+          />
+          @if (mfaForm.controls.code.touched && mfaForm.controls.code.invalid) {
+            <span class="platform-field-error">Informe o código de seis dígitos.</span>
+          }
+          <button class="platform-primary-button" type="submit" [disabled]="isSaving()">
+            {{ isSaving() ? 'Verificando...' : 'Verificar e continuar' }}
+          </button>
+        </form>
+      }
+      @if (feedback()) {
+        <p class="platform-feedback" role="alert">{{ feedback() }}</p>
+      }
+    </section>
+  } @else {
+    <section class="platform-content">
+      <div class="platform-toolbar">
+        <div>
+          <p class="platform-eyebrow">ADMINISTRAÇÃO GLOBAL</p>
+          <h2>
+            Igrejas <span class="tenant-count">{{ tenants().length }}</span>
+          </h2>
+          <p class="platform-subtitle">Gerencie organizações e convites de acesso.</p>
+        </div>
+        <button
+          class="platform-primary-button"
+          type="button"
+          (click)="showCreateForm.set(!showCreateForm())"
+        >
+          {{ showCreateForm() ? 'Cancelar' : '+ Nova igreja' }}
+        </button>
+      </div>
+
+      @if (feedback()) {
+        <p class="platform-feedback" role="status">{{ feedback() }}</p>
+      }
+
+      @if (invitation(); as created) {
+        <section class="invitation-result" aria-labelledby="invitation-title">
+          <button
+            class="invitation-dismiss"
+            type="button"
+            aria-label="Fechar convite"
+            (click)="dismissInvitation()"
+          >
+            ×
+          </button>
+          <p class="platform-eyebrow">CONVITE DO ADMINISTRADOR</p>
+          <h2 id="invitation-title">Convite para {{ created.tenantName }}</h2>
+          <p>
+            Convite TENANT_ADMIN preparado para <strong>{{ created.email }}</strong>. Este link é
+            exibido somente agora e expira em {{ formatDate(created.expiresAt) }}.
+          </p>
+          <div class="invitation-link-row">
+            <input aria-label="Link de convite" [value]="invitationLink()" readonly />
+            <button class="platform-secondary-button" type="button" (click)="copyInvitationLink()">
+              Copiar link
+            </button>
+          </div>
+          <p class="invitation-warning">
+            Copie e entregue o link ao administrador da igreja. Ao fechar esta mensagem, o token não
+            poderá ser recuperado.
+          </p>
+        </section>
+      }
+
+      @if (showCreateForm()) {
+        <section class="create-tenant-panel" aria-labelledby="create-title">
+          <div class="panel-heading">
+            <div>
+              <p class="platform-eyebrow">NOVO TENANT</p>
+              <h2 id="create-title">Cadastrar igreja</h2>
+            </div>
+            <span class="step-badge">1 de 1</span>
+          </div>
+          <form [formGroup]="createForm" (ngSubmit)="createTenant()" novalidate>
+            <div class="tenant-form-grid">
+              <div class="platform-field">
+                <label for="church-name">Nome da igreja</label>
+                <input
+                  id="church-name"
+                  formControlName="name"
+                  autocomplete="organization"
+                  placeholder="Ex.: Igreja Batista Central"
+                />
+                @if (createForm.controls.name.touched && createForm.controls.name.invalid) {
+                  <span class="platform-field-error"
+                    >Informe o nome da igreja (mínimo 2 caracteres).</span
+                  >
+                }
+              </div>
+              <div class="platform-field">
+                <label for="church-slug">Identificador (slug)</label>
+                <input
+                  id="church-slug"
+                  formControlName="slug"
+                  autocomplete="off"
+                  placeholder="ex-igreja-central"
+                />
+                <span class="field-hint">Use letras minúsculas, números e hífens.</span>
+                @if (createForm.controls.slug.touched && createForm.controls.slug.invalid) {
+                  <span class="platform-field-error"
+                    >Use de 2 a 40 caracteres: letras minúsculas, números e hífens.</span
+                  >
+                }
+              </div>
+              <div class="platform-field">
+                <label for="church-document">CNPJ (opcional)</label>
+                <input
+                  id="church-document"
+                  formControlName="document"
+                  autocomplete="off"
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              <div class="platform-field">
+                <label for="church-timezone">Fuso horário</label>
+                <select id="church-timezone" formControlName="timezone">
+                  <option value="America/Sao_Paulo">Brasília (America/Sao_Paulo)</option>
+                  <option value="America/Manaus">Manaus (America/Manaus)</option>
+                  <option value="America/Rio_Branco">Rio Branco (America/Rio_Branco)</option>
+                  <option value="America/Noronha">Fernando de Noronha (America/Noronha)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-divider"></div>
+            <div class="panel-heading admin-heading">
+              <div>
+                <p class="platform-eyebrow">PRIMEIRO ACESSO</p>
+                <h3>Administrador da igreja</h3>
+              </div>
+              <span class="role-badge">TENANT_ADMIN</span>
+            </div>
+            <div class="tenant-form-grid">
+              <div class="platform-field">
+                <label for="admin-name">Nome</label>
+                <input
+                  id="admin-name"
+                  formControlName="adminName"
+                  autocomplete="name"
+                  placeholder="Nome do administrador"
+                />
+                @if (
+                  createForm.controls.adminName.touched && createForm.controls.adminName.invalid
+                ) {
+                  <span class="platform-field-error">Informe o nome do administrador.</span>
+                }
+              </div>
+              <div class="platform-field">
+                <label for="admin-email">E-mail</label>
+                <input
+                  id="admin-email"
+                  type="email"
+                  formControlName="adminEmail"
+                  autocomplete="email"
+                  placeholder="admin@igreja.org.br"
+                />
+                @if (
+                  createForm.controls.adminEmail.touched && createForm.controls.adminEmail.invalid
+                ) {
+                  <span class="platform-field-error">Informe um e-mail válido.</span>
+                }
+              </div>
+            </div>
+            <div class="create-form-actions">
+              <button
+                class="platform-secondary-button"
+                type="button"
+                (click)="showCreateForm.set(false)"
+              >
+                Cancelar
+              </button>
+              <button class="platform-primary-button" type="submit" [disabled]="isSaving()">
+                {{ isSaving() ? 'Criando...' : 'Criar igreja e gerar convite' }}
+              </button>
+            </div>
+          </form>
+        </section>
+      }
+
+      @if (tenantForReissue(); as tenant) {
+        <section class="create-tenant-panel reissue-panel" aria-labelledby="reissue-title">
+          <div class="panel-heading">
+            <div>
+              <p class="platform-eyebrow">RECUPERAR ACESSO</p>
+              <h2 id="reissue-title">Novo convite para {{ tenant.name }}</h2>
+            </div>
+            <span class="role-badge">TENANT_ADMIN</span>
+          </div>
+          <p class="reissue-description">
+            O link anterior será revogado. Informe novamente os dados do administrador; o novo link
+            será exibido uma única vez.
+          </p>
+          <form [formGroup]="reissueForm" (ngSubmit)="reissueAdminInvitation()" novalidate>
+            <div class="tenant-form-grid">
+              <div class="platform-field">
+                <label for="reissue-name">Nome do administrador</label>
+                <input
+                  id="reissue-name"
+                  formControlName="name"
+                  autocomplete="name"
+                  placeholder="Nome completo"
+                />
+                @if (reissueForm.controls.name.touched && reissueForm.controls.name.invalid) {
+                  <span class="platform-field-error">Informe o nome (mínimo 2 caracteres).</span>
+                }
+              </div>
+              <div class="platform-field">
+                <label for="reissue-email">E-mail do convite</label>
+                <input
+                  id="reissue-email"
+                  type="email"
+                  formControlName="email"
+                  autocomplete="email"
+                  placeholder="admin@igreja.org.br"
+                />
+                @if (reissueForm.controls.email.touched && reissueForm.controls.email.invalid) {
+                  <span class="platform-field-error">Informe um e-mail válido.</span>
+                }
+              </div>
+            </div>
+            <div class="create-form-actions">
+              <button
+                class="platform-secondary-button"
+                type="button"
+                (click)="cancelAdminInvitationReissue()"
+              >
+                Cancelar
+              </button>
+              <button class="platform-primary-button" type="submit" [disabled]="isSaving()">
+                {{ isSaving() ? 'Gerando...' : 'Revogar link anterior e gerar novo' }}
+              </button>
+            </div>
+          </form>
+        </section>
+      }
+
+      <section class="tenant-list-panel" aria-labelledby="tenant-list-title">
+        <div class="list-controls">
+          <div>
+            <h2 id="tenant-list-title">Igrejas cadastradas</h2>
+            <p>Somente metadados e indicadores de uso da plataforma.</p>
+          </div>
+          <div class="tenant-filters">
+            <label class="visually-hidden" for="tenant-search">Buscar igreja</label>
+            <input
+              id="tenant-search"
+              type="search"
+              placeholder="Buscar por nome ou slug"
+              [value]="search()"
+              (input)="updateSearchFromEvent($event)"
+            />
+            <label class="visually-hidden" for="status-filter">Filtrar por status</label>
+            <select
+              id="status-filter"
+              [value]="statusFilter()"
+              (change)="updateStatusFilterFromEvent($event)"
+            >
+              <option value="ALL">Todos os status</option>
+              <option value="TRIAL">Período de teste</option>
+              <option value="ACTIVE">Ativa</option>
+              <option value="PAST_DUE">Em atraso</option>
+              <option value="SUSPENDED">Suspensa</option>
+              <option value="CANCELLED">Cancelada</option>
+            </select>
+          </div>
+        </div>
+
+        @if (filteredTenants().length > 0) {
+          <div class="tenant-table-wrap">
+            <table class="tenant-table">
+              <thead>
+                <tr>
+                  <th scope="col">Igreja</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Usuários</th>
+                  <th scope="col">Membros</th>
+                  <th scope="col">Armazenamento</th>
+                  <th scope="col">Administrador</th>
+                  <th scope="col">Período de teste</th>
+                  <th scope="col">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (tenant of filteredTenants(); track tenant.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ tenant.name }}</strong>
+                      <span class="tenant-slug">{{ tenant.slug }}</span>
+                    </td>
+                    <td>
+                      <span class="status-badge" [attr.data-status]="tenant.status">{{
+                        statusLabel(tenant.status)
+                      }}</span>
+                    </td>
+                    <td>{{ tenant.metrics.activeUsers }}</td>
+                    <td>{{ tenant.metrics.activeMembers }}</td>
+                    <td>{{ formatStorage(tenant.metrics.storageBytes) }}</td>
+                    <td>
+                      @if (tenant.hasActiveTenantAdmin) {
+                        <span class="admin-state active">Ativo</span>
+                      } @else if (tenant.pendingAdminInvitationExpiresAt) {
+                        <span class="admin-state pending">Convite pendente</span>
+                      } @else {
+                        <span class="admin-state missing">Sem TENANT_ADMIN</span>
+                      }
+                    </td>
+                    <td>{{ formatDate(tenant.trialEndsAt) }}</td>
+                    <td>
+                      @if (!tenant.hasActiveTenantAdmin && tenant.status !== 'CANCELLED') {
+                        <button
+                          class="tenant-action-button"
+                          type="button"
+                          (click)="startAdminInvitationReissue(tenant)"
+                        >
+                          {{
+                            tenant.pendingAdminInvitationExpiresAt
+                              ? 'Gerar novo link'
+                              : 'Convidar TENANT_ADMIN'
+                          }}
+                        </button>
+                      } @else {
+                        <span class="tenant-action-unavailable">—</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-tenants">
+            <h3>
+              {{
+                tenants().length ? 'Nenhuma igreja encontrada' : 'Ainda não há igrejas cadastradas'
+              }}
+            </h3>
+            <p>
+              {{
+                tenants().length
+                  ? 'Altere os filtros ou a busca.'
+                  : 'Crie a primeira igreja para gerar o convite do administrador.'
+              }}
+            </p>
+            @if (!tenants().length) {
+              <button
+                class="platform-primary-button"
+                type="button"
+                (click)="showCreateForm.set(true)"
+              >
+                + Nova igreja
+              </button>
+            }
+          </div>
+        }
+      </section>
+      <footer class="platform-footer">IBG Gestão · Console da plataforma · Acesso restrito</footer>
+    </section>
+  }
+</main>

@@ -1,0 +1,103 @@
+<section class="login-panel" aria-labelledby="login-title">
+  <div class="login-content">
+    <a class="brand brand-mobile" routerLink="/login" aria-label="IBG Gestão, início">ibg</a>
+
+    <header class="login-header">
+      <h2 id="login-title">Bem-vindo de volta</h2>
+      <p>Entre para acessar a sua igreja.</p>
+    </header>
+
+    <div class="steps" aria-label="Etapa 1 de 2: Acesso">
+      <span class="step-current">1&nbsp; Acesso</span>
+      <span class="step-divider" aria-hidden="true"></span>
+      <span class="step-next">2&nbsp; Verificação de segurança</span>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="username"
+          inputmode="email"
+          placeholder="seu@email.com"
+          [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+          [attr.aria-describedby]="
+            form.controls.email.touched && form.controls.email.invalid ? 'email-error' : null
+          "
+        />
+        @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+          <span class="field-error" id="email-error">Informe seu e-mail.</span>
+        } @else if (form.controls.email.touched && form.controls.email.hasError('email')) {
+          <span class="field-error" id="email-error">Informe um e-mail válido.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Senha</label>
+        <div class="password-input">
+          <input
+            id="password"
+            [type]="passwordVisible() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="Digite sua senha"
+            [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+            [attr.aria-describedby]="
+              form.controls.password.touched && form.controls.password.invalid
+                ? 'password-error'
+                : null
+            "
+          />
+          <button
+            class="visibility-button"
+            type="button"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="passwordVisible() ? 'Ocultar senha' : 'Mostrar senha'"
+            [attr.aria-pressed]="passwordVisible()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.5 12s3.2-6 9.5-6 9.5 6 9.5 6-3.2 6-9.5 6-9.5-6-9.5-6Z" />
+              <circle cx="12" cy="12" r="2.5" />
+            </svg>
+          </button>
+        </div>
+        @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+          <span class="field-error" id="password-error">Informe sua senha.</span>
+        }
+      </div>
+
+      <button class="text-button forgot-link" type="button" (click)="requestPasswordReset()">
+        Esqueci minha senha
+      </button>
+
+      <button class="submit-button" type="submit" [disabled]="isSubmitting()">
+        <span>{{ isSubmitting() ? 'Entrando...' : 'Entrar' }}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+      </button>
+
+      @if (feedback()) {
+        <p class="form-feedback" role="status">{{ feedback() }}</p>
+      }
+    </form>
+
+    <aside class="invite-notice">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="6" y="10" width="12" height="10" rx="1" />
+        <path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3" />
+      </svg>
+      <div>
+        <h3>Acesso somente por convite</h3>
+        <p>Ainda não tem acesso? Peça um convite ao administrador da sua igreja.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="login-footer">
+    <span>Privacidade</span>
+    <span>Termos de uso</span>
+    <span>© 2026 IBG Gestão</span>
+  </footer>
+</section>
