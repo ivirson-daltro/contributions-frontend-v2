@@ -142,6 +142,9 @@ describe('TenantDashboardComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.overview-card')).toHaveLength(4);
     expect(text).toContain('Evolução financeira');
     expect(text).toContain('O que você precisa fazer?');
+    const userInfo = (fixture.nativeElement as HTMLElement).querySelector('.tenant-user-info');
+    expect(userInfo?.textContent).toContain('Admin');
+    expect(userInfo?.textContent).toContain('Administrador da igreja');
   });
 
   it('should restore, toggle, and persist the dashboard theme preference', async () => {
@@ -322,6 +325,8 @@ describe('TenantDashboardComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'exclusiva para administradores ativos',
     );
+    expect((fixture.nativeElement as HTMLElement).querySelector('.tenant-user-info')?.textContent)
+      .not.toContain('Administrador da igreja');
   });
 
   it('should show an explicit error if either dashboard endpoint fails', async () => {

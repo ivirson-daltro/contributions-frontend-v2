@@ -107,13 +107,6 @@
     <header class="tenant-topbar">
       <div class="tenant-breadcrumb">Minha igreja <span>/</span> Visão geral</div>
       <div class="tenant-user">
-        <label class="dashboard-search">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="6.5" />
-            <path d="m16 16 4 4" />
-          </svg>
-          <input type="search" placeholder="Buscar..." aria-label="Buscar no painel" disabled />
-        </label>
         <button class="notification-button" type="button" disabled aria-label="Notificações">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7m-8 10h4" />
@@ -141,7 +134,12 @@
           <span class="theme-feedback" role="status">{{ themeFeedback() }}</span>
         }
         <span class="user-avatar" aria-hidden="true">{{ displayName().charAt(0) }}</span>
-        <span>{{ displayName() }}</span>
+        <div class="tenant-user-info">
+          <strong>{{ displayName() }}</strong>
+          @if (membership()?.roles.includes('TENANT_ADMIN')) {
+            <span>Administrador da igreja</span>
+          }
+        </div>
         <button type="button" (click)="signOut()">Sair</button>
       </div>
     </header>

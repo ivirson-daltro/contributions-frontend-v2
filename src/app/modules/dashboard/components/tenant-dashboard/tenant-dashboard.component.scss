@@ -248,8 +248,12 @@ app-tenant-dashboard {
 }
 
 .tenant-breadcrumb {
+  min-width: 0;
+  overflow: hidden;
   color: #747a8e;
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tenant-breadcrumb span {
@@ -259,26 +263,37 @@ app-tenant-dashboard {
 
 .tenant-user {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 10px;
   color: #42485f;
   font-size: 11px;
 }
 
-.dashboard-search {
-  display: flex;
-  width: 210px;
-  height: 34px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 11px;
-  border: 1px solid #e7e9f0;
-  border-radius: 7px;
-  background: #f8f9fb;
-  color: #8990a2;
+.tenant-user-info {
+  display: grid;
+  min-width: 0;
+  max-width: 180px;
+  gap: 3px;
 }
 
-.dashboard-search svg,
+.tenant-user-info strong,
+.tenant-user-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tenant-user-info strong {
+  color: #25283d;
+  font-weight: 600;
+}
+
+.tenant-user-info span {
+  color: #8a90a0;
+  font-size: 9px;
+}
+
 .notification-button svg {
   width: 15px;
   height: 15px;
@@ -287,16 +302,6 @@ app-tenant-dashboard {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.6;
-}
-
-.dashboard-search input {
-  min-width: 0;
-  width: 100%;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
 }
 
 .notification-button {
@@ -1123,10 +1128,6 @@ app-tenant-dashboard {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .dashboard-search {
-    width: 160px;
-  }
-
   .dashboard-primary-grid,
   .dashboard-secondary-grid {
     grid-template-columns: 1fr;
@@ -1174,13 +1175,16 @@ app-tenant-dashboard {
     padding: 9px 16px;
   }
 
-  .dashboard-search,
   .notification-button {
     display: none;
   }
 
   .tenant-user > span:not(.user-avatar) {
     display: none;
+  }
+
+  .tenant-user-info {
+    max-width: 110px;
   }
 
   .dashboard-content {
@@ -1344,6 +1348,14 @@ app-tenant-dashboard {
   color: #c1c5d4;
 }
 
+.dark-theme .tenant-user-info strong {
+  color: #f1f2f8;
+}
+
+.dark-theme .tenant-user-info span {
+  color: #aeb4c7;
+}
+
 .dark-theme .tenant-breadcrumb span {
   color: #858ba1;
 }
@@ -1411,8 +1423,7 @@ app-tenant-dashboard {
 .dark-theme .overview-card,
 .dark-theme .chart-card,
 .dark-theme .community-card,
-.dark-theme .side-card,
-.dark-theme .dashboard-search {
+.dark-theme .side-card {
   border-color: #3a4055;
   background: #202435;
   box-shadow: none;
@@ -1420,10 +1431,6 @@ app-tenant-dashboard {
 
 .dark-theme .period-label {
   color: #c1c5d4;
-}
-
-.dark-theme .dashboard-search {
-  color: #aeb4c7;
 }
 
 .dark-theme .action-card {
