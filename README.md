@@ -77,3 +77,11 @@ The `/accept-invite?token=...` route loads the public invitation preview and
 supports both account creation for a new invitee and authenticated acceptance
 for an existing account. The invitation token is not persisted in browser
 storage; it remains in the link and is sent only to the invitation API.
+
+## Application structure
+
+Shared authentication infrastructure lives in `src/app/core/auth`, while the
+authentication layout lives in `src/app/layout`. Feature code is organized by
+domain under `src/app/modules`: `auth`, `memberships`, `dashboard`, and
+`platform`. Each feature keeps components, services, and DTOs in separate
+directories; tests stay alongside the files they cover.

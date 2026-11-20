@@ -2,9 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { AuthService } from '../auth/auth.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 import { AcceptInviteComponent } from './accept-invite.component';
-import { InvitationService } from './invitation.service';
+import { InvitationService } from '../../services/invitation.service';
 
 describe('AcceptInviteComponent', () => {
   const authService = {

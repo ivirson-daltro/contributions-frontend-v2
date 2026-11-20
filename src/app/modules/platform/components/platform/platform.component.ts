@@ -2,8 +2,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../auth/auth.service';
-import { IssueAdminInvitationResponse, PlatformService, PlatformTenant } from './platform.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { IssueAdminInvitationResponse } from '../../dtos/issue-admin-invitation-response.dto';
+import { PlatformTenant } from '../../dtos/platform-tenant.dto';
+import { PlatformService } from '../../services/platform.service';
 
 type PlatformView = 'loading' | 'ready' | 'enroll' | 'verify' | 'denied';
 
@@ -330,20 +332,8 @@ export class PlatformComponent implements OnInit {
 
   private async handlePlatformError(error: unknown): Promise<void> {
     if (this.getErrorCode(error) === 'MFA_REQUIRED') {
-      try {
-        const factors = await this.authService.getVerifiedTotpFactors();
-        if (factors.length > 0) {
-          this.factorId = factors[0].id;
-          this.view.set('verify');
-          return;
-        }
-        this.view.set('enroll');
-        return;
-      } catch {
-        this.view.set('denied');
-        this.feedback.set('Não foi possível consultar a configuração de MFA.');
-        return;
-      }
+      await this.router.navigate(['/two-factor'], { queryParams: { returnUrl: '/platform' } });
+      return;
     }
 
     if (error instanceof HttpErrorResponse && error.status === 401) {

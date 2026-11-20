@@ -2,24 +2,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { createClient, type AuthError } from '@supabase/supabase-js';
-import { environment } from '../../environments/environment';
-
-export interface TenantMembership {
-  tenantId: string;
-  slug: string;
-  name: string;
-  status: string;
-  roles: string[];
-}
-
-export interface CurrentUserResponse {
-  user: {
-    id: string;
-    email: string | null;
-    displayName: string | null;
-  };
-  memberships: TenantMembership[];
-}
+import { environment } from '../../../../environments/environment';
+import { CurrentUserResponse } from '../dtos/current-user-response.dto';
+import { TotpFactorStatus } from '../models/totp-factor-status';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -65,6 +50,23 @@ export class AuthService {
     const { data, error } = await this.supabase.auth.mfa.listFactors();
     if (error) throw error;
     return data.totp.filter((factor) => factor.status === 'verified');
+  }
+
+  async getTotpFactorStatus(): Promise<TotpFactorStatus> {
+    const [{ data: factors, error: factorsError }, { data: assurance, error: assuranceError }] =
+      await Promise.all([
+        this.supabase.auth.mfa.listFactors(),
+        this.supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+      ]);
+
+    if (factorsError) throw factorsError;
+    if (assuranceError) throw assuranceError;
+
+    return {
+      factors: factors.totp,
+      currentLevel: assurance.currentLevel,
+      nextLevel: assurance.nextLevel,
+    };
   }
 
   async enrollTotp(): Promise<{

@@ -1,56 +1,11 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../environments/environment';
-
-export interface PlatformTenant {
-  id: string;
-  slug: string;
-  name: string;
-  status: string;
-  timezone: string;
-  trialEndsAt: string | null;
-  createdAt: string;
-  metrics: {
-    activeUsers: number;
-    activeMembers: number;
-    storageBytes: number;
-  };
-  hasActiveTenantAdmin: boolean;
-  pendingAdminInvitationExpiresAt: string | null;
-}
-
-export interface CreateTenantRequest {
-  name: string;
-  slug: string;
-  document: string | null;
-  timezone: string;
-  adminName: string;
-  adminEmail: string;
-}
-
-export interface CreateTenantResponse {
-  tenant: Pick<PlatformTenant, 'id' | 'slug' | 'name' | 'status' | 'timezone'> & {
-    trial_ends_at?: string | null;
-  };
-  invite: {
-    token: string;
-    expiresAt: string;
-    email: string;
-    roles: string[];
-  };
-}
-
-export interface IssueAdminInvitationResponse {
-  tenantId: string;
-  invitation: {
-    id: string;
-    token: string;
-    expiresAt: string;
-    email: string;
-    roles: string[];
-  };
-}
+import { environment } from '../../../../environments/environment';
+import { PlatformTenant } from '../dtos/platform-tenant.dto';
+import { CreateTenantRequest } from '../dtos/create-tenant-request.dto';
+import { CreateTenantResponse } from '../dtos/create-tenant-response.dto';
+import { IssueAdminInvitationResponse } from '../dtos/issue-admin-invitation-response.dto';
 
 @Injectable({ providedIn: 'root' })
 export class PlatformService {

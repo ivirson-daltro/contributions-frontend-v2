@@ -2,8 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthService } from '../auth/auth.service';
-import { InvitationPreview, InvitationService } from './invitation.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { InvitationPreview } from '../../dtos/invitation-preview.dto';
+import { InvitationService } from '../../services/invitation.service';
 
 type InvitationView = 'loading' | 'ready' | 'success' | 'unavailable' | 'error' | 'expired';
 

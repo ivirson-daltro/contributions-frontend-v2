@@ -2,8 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../auth/auth.service';
-import { PlatformService } from '../platform/platform.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { PlatformService } from '../../../platform/services/platform.service';
 
 @Component({
   host: { style: 'display: contents' },
@@ -58,32 +58,49 @@ export class LoginComponent {
         return;
       }
 
-      const profile = await this.authService.getCurrentUser(accessToken);
-      if (profile.memberships.some((membership) => membership.status === 'ACTIVE')) {
-        await this.router.navigate(['/select-church']);
+      const destination = await this.resolveDestination(accessToken);
+      if (!destination) return;
+
+      const factorStatus = await this.authService.getTotpFactorStatus();
+      if (factorStatus.currentLevel !== 'aal2') {
+        await this.router.navigate(['/two-factor'], { queryParams: { returnUrl: destination } });
         return;
       }
 
-      try {
-        await this.platformService.listTenants(accessToken);
-        await this.router.navigate(['/platform']);
-      } catch (platformError) {
-        if (this.getErrorCode(platformError) === 'MFA_REQUIRED') {
-          await this.router.navigate(['/platform']);
-        } else if (this.getErrorCode(platformError) === 'FORBIDDEN') {
-          this.feedback.set(
-            'Sua conta ainda não tem acesso a uma igreja. Peça um convite ao administrador da sua igreja.',
-          );
-        } else {
-          throw platformError;
-        }
-      }
+      await this.router.navigate([destination]);
     } catch {
       this.feedback.set(
         'Não foi possível concluir o acesso. Verifique sua conexão e tente novamente.',
       );
     } finally {
       this.isSubmitting.set(false);
+    }
+  }
+
+  private async resolveDestination(
+    accessToken: string,
+  ): Promise<'/select-church' | '/platform' | null> {
+    const profile = await this.authService.getCurrentUser(accessToken);
+    if (profile.memberships.some((membership) => membership.status === 'ACTIVE')) {
+      return '/select-church';
+    }
+
+    try {
+      await this.platformService.listTenants(accessToken);
+      return '/platform';
+    } catch (platformError) {
+      if (this.getErrorCode(platformError) === 'MFA_REQUIRED') {
+        return '/platform';
+      }
+
+      if (this.getErrorCode(platformError) === 'FORBIDDEN') {
+        this.feedback.set(
+          'Sua conta ainda não tem acesso a uma igreja. Peça um convite ao administrador da sua igreja.',
+        );
+        return null;
+      }
+
+      throw platformError;
     }
   }
 

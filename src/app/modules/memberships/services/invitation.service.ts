@@ -1,30 +1,10 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../environments/environment';
-
-export interface InvitationPreview {
-  tenant: {
-    name: string;
-    slug: string;
-  };
-  email: string;
-  name?: string;
-  roles: string[];
-  status: string;
-  expiresAt: string;
-  accountExists: boolean;
-}
-
-export interface AcceptInvitationResult {
-  tenantId: string;
-  membershipId: string;
-}
-
-export interface AcceptInvitationPayload {
-  displayName?: string;
-  password?: string;
-}
+import { environment } from '../../../../environments/environment';
+import { InvitationPreview } from '../dtos/invitation-preview.dto';
+import { AcceptInvitationResult } from '../dtos/accept-invitation-result.dto';
+import { AcceptInvitationPayload } from '../dtos/accept-invitation-payload.dto';
 
 @Injectable({ providedIn: 'root' })
 export class InvitationService {

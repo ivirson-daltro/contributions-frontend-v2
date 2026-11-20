@@ -4,37 +4,59 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./auth-layout/auth-layout.component').then((module) => module.AuthLayoutComponent),
+      import('./layout/auth-layout/auth-layout.component').then(
+        (module) => module.AuthLayoutComponent,
+      ),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'login' },
       {
         path: 'login',
         loadComponent: () =>
-          import('./login/login.component').then((module) => module.LoginComponent),
+          import('./modules/auth/components/login/login.component').then(
+            (module) => module.LoginComponent,
+          ),
         title: 'Entrar | IBG Gestão',
       },
       {
         path: 'accept-invite',
         loadComponent: () =>
-          import('./invitation/accept-invite.component').then(
+          import('./modules/memberships/components/accept-invite/accept-invite.component').then(
             (module) => module.AcceptInviteComponent,
           ),
         title: 'Aceitar convite | IBG Gestão',
+      },
+      {
+        path: 'two-factor',
+        loadComponent: () =>
+          import('./modules/auth/components/two-factor/two-factor.component').then(
+            (module) => module.TwoFactorComponent,
+          ),
+        title: 'Verificação de segurança | IBG Gestão',
       },
     ],
   },
   {
     path: 'platform',
     loadComponent: () =>
-      import('./platform/platform.component').then((module) => module.PlatformComponent),
+      import('./modules/platform/components/platform/platform.component').then(
+        (module) => module.PlatformComponent,
+      ),
     title: 'Igrejas | IBG Gestão',
   },
   {
     path: 'select-church',
     loadComponent: () =>
-      import('./select-church/select-church.component').then(
+      import('./modules/memberships/components/select-church/select-church.component').then(
         (module) => module.SelectChurchComponent,
       ),
     title: 'Selecionar igreja | IBG Gestão',
+  },
+  {
+    path: 'tenant/:slug',
+    loadComponent: () =>
+      import('./modules/dashboard/components/tenant-dashboard/tenant-dashboard.component').then(
+        (module) => module.TenantDashboardComponent,
+      ),
+    title: 'Visão geral | IBG Gestão',
   },
 ];

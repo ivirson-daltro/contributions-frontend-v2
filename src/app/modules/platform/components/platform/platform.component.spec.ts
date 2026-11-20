@@ -2,9 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { AuthService } from '../auth/auth.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PlatformComponent } from './platform.component';
-import { PlatformService } from './platform.service';
+import { PlatformService } from '../../services/platform.service';
 
 describe('PlatformComponent', () => {
   const authService = {

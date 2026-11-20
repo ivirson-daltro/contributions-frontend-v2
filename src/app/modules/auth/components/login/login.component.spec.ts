@@ -2,8 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
-import { AuthService } from '../auth/auth.service';
-import { PlatformService } from '../platform/platform.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { PlatformService } from '../../../platform/services/platform.service';
 import { LoginComponent } from './login.component';
 
 describe('Login', () => {
@@ -11,6 +11,7 @@ describe('Login', () => {
     signIn: vi.fn(),
     getAccessToken: vi.fn(),
     getCurrentUser: vi.fn(),
+    getTotpFactorStatus: vi.fn(),
   };
   const platformService = {
     listTenants: vi.fn(),
@@ -33,6 +34,11 @@ describe('Login', () => {
           roles: ['TENANT_ADMIN'],
         },
       ],
+    });
+    authService.getTotpFactorStatus.mockResolvedValue({
+      factors: [{ id: 'factor-id', status: 'verified' }],
+      currentLevel: 'aal2',
+      nextLevel: 'aal2',
     });
     platformService.listTenants.mockReset();
     platformService.listTenants.mockResolvedValue({ items: [], meta: { count: 0 } });
@@ -116,6 +122,34 @@ describe('Login', () => {
 
     expect(platformService.listTenants).toHaveBeenCalledWith('access-token');
     expect(navigate).toHaveBeenCalledWith(['/platform']);
+  });
+
+  it('should route an unverified user through the two-factor flow', async () => {
+    authService.getTotpFactorStatus.mockResolvedValue({
+      factors: [{ id: 'factor-id', status: 'verified' }],
+      currentLevel: 'aal1',
+      nextLevel: 'aal2',
+    });
+    const fixture = TestBed.createComponent(LoginComponent);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLInputElement>('#email')!.value = 'user@example.com';
+    element.querySelector<HTMLInputElement>('#email')!.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLInputElement>('#password')!.value = 'password123';
+    element.querySelector<HTMLInputElement>('#password')!.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    element
+      .querySelector<HTMLFormElement>('form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+
+    expect(navigate).toHaveBeenCalledWith(['/two-factor'], {
+      queryParams: { returnUrl: '/select-church' },
+    });
   });
 
   it('should not route a user without membership to the platform console', async () => {

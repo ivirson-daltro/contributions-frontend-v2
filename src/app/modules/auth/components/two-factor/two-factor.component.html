@@ -1,0 +1,134 @@
+<section class="login-panel two-factor-panel" aria-labelledby="two-factor-title">
+  <div class="two-factor-content">
+    <a class="brand brand-mobile" routerLink="/login" aria-label="IBG Gestão, início">ibg</a>
+
+    @if (view() === 'loading') {
+      <div class="invite-state" aria-live="polite">
+        <span class="invite-loader" aria-hidden="true"></span>
+        <h1 id="two-factor-title">Preparando sua segurança</h1>
+        <p>Verificando o acesso em duas etapas...</p>
+      </div>
+    } @else if (view() === 'error') {
+      <div class="invite-state" role="alert">
+        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <h1 id="two-factor-title">Não foi possível continuar</h1>
+        <p>{{ feedback() }}</p>
+        <button class="invite-retry-button" type="button" (click)="loadStatus()">
+          Tentar novamente
+        </button>
+        <button class="two-factor-back-button" type="button" (click)="backToLogin()">
+          Voltar para o acesso
+        </button>
+      </div>
+    } @else {
+      <header class="login-header two-factor-header">
+        <h2 id="two-factor-title">
+          {{ view() === 'setup' ? 'Proteja seu acesso' : 'Verifique seu acesso' }}
+        </h2>
+        <p>
+          {{
+            view() === 'setup'
+              ? 'Configure a autenticação em duas etapas para continuar.'
+              : 'Confirme o acesso com o código do seu autenticador.'
+          }}
+        </p>
+      </header>
+
+      <div class="steps two-factor-steps" aria-label="Etapa 2 de 2: Verificação de segurança">
+        <span class="step-complete">1&nbsp; Acesso</span>
+        <span class="step-divider" aria-hidden="true"></span>
+        <span class="step-current">2&nbsp; Verificação de segurança</span>
+      </div>
+
+      @if (view() === 'setup') {
+        <section
+          class="two-factor-enroll-grid"
+          aria-label="Configuração do aplicativo autenticador"
+        >
+          <div class="two-factor-qr-block">
+            <span class="two-factor-step-number">1</span>
+            <h3>Escaneie o QR no aplicativo autenticador</h3>
+            <img [src]="qrCode()" alt="QR code para configurar o autenticador" />
+          </div>
+          <div class="two-factor-manual-block">
+            <span class="two-factor-step-number">2</span>
+            <div>
+              <h3>Ou use esta chave</h3>
+              <p>Abra o aplicativo, escolha adicionar manualmente e informe:</p>
+              <code>{{ secret() }}</code>
+              <button type="button" class="two-factor-copy-button" (click)="copySecret()">
+                {{ secretCopied() ? 'Chave copiada' : 'Copiar chave' }}
+              </button>
+            </div>
+          </div>
+        </section>
+      } @else {
+        <aside class="two-factor-security-note">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m12 3 7 3v5c0 4.6-2.8 8-7 10-4.2-2-7-5.4-7-10V6l7-3Z" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
+          <div>
+            <strong>Uma camada extra de segurança</strong>
+            <span>Seu código muda a cada 30 segundos.</span>
+          </div>
+        </aside>
+      }
+
+      <form class="two-factor-form" [formGroup]="form" (ngSubmit)="verify()" novalidate>
+        <div class="field">
+          <label for="two-factor-code">
+            {{ view() === 'setup' ? 'Código de verificação' : 'Código do autenticador' }}
+          </label>
+          <input
+            class="two-factor-code-input"
+            id="two-factor-code"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            formControlName="code"
+            placeholder="123 456"
+            [value]="form.controls.code.value"
+            (input)="updateCode($event)"
+            [attr.aria-invalid]="form.controls.code.touched && form.controls.code.invalid"
+            [attr.aria-describedby]="
+              form.controls.code.touched && form.controls.code.invalid
+                ? 'two-factor-code-error'
+                : null
+            "
+          />
+          @if (form.controls.code.touched && form.controls.code.invalid) {
+            <span class="field-error" id="two-factor-code-error">
+              Informe o código de seis dígitos.
+            </span>
+          }
+        </div>
+
+        @if (feedback()) {
+          <p class="form-feedback two-factor-feedback" role="alert">{{ feedback() }}</p>
+        }
+
+        <button class="submit-button" type="submit" [disabled]="isSubmitting()">
+          {{
+            isSubmitting()
+              ? 'Verificando...'
+              : view() === 'setup'
+                ? 'Ativar proteção e continuar'
+                : 'Verificar e entrar'
+          }}
+        </button>
+      </form>
+
+      <button class="two-factor-back-button" type="button" (click)="backToLogin()">
+        Voltar para o acesso
+      </button>
+    }
+  </div>
+
+  <footer class="login-footer two-factor-footer">
+    <span>Privacidade</span>
+    <span>Termos de uso</span>
+    <span>© 2026 IBG Gestão</span>
+  </footer>
+</section>
