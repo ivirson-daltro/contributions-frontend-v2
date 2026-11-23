@@ -23,6 +23,7 @@ import { CreateContribution } from '../../dtos/create-contribution.dto';
 import { MemberLookup } from '../../dtos/member-lookup.dto';
 import { PaymentMethod } from '../../dtos/payment-method.dto';
 import { ContributionsService } from '../../services/contributions.service';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 interface CalendarDay {
   date: string;
@@ -43,6 +44,7 @@ export class ContributionsComponent implements OnInit {
 
   private readonly service = inject(ContributionsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toast = inject(ToastService);
   private readonly memberQueries = new Subject<string | null>();
   private listRequest = 0;
   private idempotencyKey = '';
@@ -111,7 +113,7 @@ export class ContributionsComponent implements OnInit {
                 ),
                 catchError(() => {
                   this.memberLoading.set(false);
-                  this.memberError.set('Não foi possível buscar membros. Tente novamente.');
+                  this.toast.error('Não foi possível buscar membros. Tente novamente.');
                   return EMPTY;
                 }),
               ),
@@ -140,7 +142,7 @@ export class ContributionsComponent implements OnInit {
       if (request === this.listRequest && !this.destroyRef.destroyed) this.list.set(result);
     } catch {
       if (request === this.listRequest && !this.destroyRef.destroyed) {
-        this.listError.set('Não foi possível carregar as contribuições. Tente novamente.');
+        this.toast.error('Não foi possível carregar as contribuições. Tente novamente.');
       }
     } finally {
       if (request === this.listRequest && !this.destroyRef.destroyed) this.listLoading.set(false);
@@ -150,7 +152,7 @@ export class ContributionsComponent implements OnInit {
   protected applyFilters(dateRange: HTMLDetailsElement): void {
     const values = this.filters.getRawValue();
     if (values.from && values.to && values.from > values.to) {
-      this.filterError.set('A data inicial deve ser anterior ou igual à data final.');
+      this.toast.warning('A data inicial deve ser anterior ou igual à data final.');
       dateRange.open = true;
       return;
     }
@@ -189,17 +191,17 @@ export class ContributionsComponent implements OnInit {
       new Date(startTime).toISOString().slice(0, 10) !== start ||
       new Date(endTime).toISOString().slice(0, 10) !== end
     ) {
-      this.reportError.set('Selecione as datas inicial e final para gerar o relatório.');
+      this.toast.warning('Selecione as datas inicial e final para gerar o relatório.');
       dateRange.open = true;
       return;
     }
     if (startTime > endTime) {
-      this.reportError.set('A data inicial deve ser anterior ou igual à data final.');
+      this.toast.warning('A data inicial deve ser anterior ou igual à data final.');
       dateRange.open = true;
       return;
     }
     if (endTime - startTime > 365 * 86_400_000) {
-      this.reportError.set('O período do relatório não pode ultrapassar 366 dias.');
+      this.toast.warning('O período do relatório não pode ultrapassar 366 dias.');
       dateRange.open = true;
       return;
     }
@@ -228,11 +230,11 @@ export class ContributionsComponent implements OnInit {
     } catch (error) {
       if (this.destroyRef.destroyed) return;
       if (error instanceof HttpErrorResponse && error.status === 403) {
-        this.reportError.set('Sem permissão para gerar o relatório ou autenticação em duas etapas necessária.');
+        this.toast.error('Sem permissão para gerar o relatório ou autenticação em duas etapas necessária.');
       } else if (error instanceof HttpErrorResponse && error.status === 401) {
-        this.reportError.set('Sua sessão expirou. Entre novamente para gerar o relatório.');
+        this.toast.error('Sua sessão expirou. Entre novamente para gerar o relatório.');
       } else {
-        this.reportError.set('Não foi possível gerar o relatório. Confira o período e tente novamente.');
+        this.toast.error('Não foi possível gerar o relatório. Confira o período e tente novamente.');
       }
     } finally {
       if (!this.destroyRef.destroyed) this.reportLoading.set(false);
@@ -318,7 +320,7 @@ export class ContributionsComponent implements OnInit {
       this.methods.set(methods);
       if (this.openOnLoad() && types.length && methods.length) this.openDialog();
     } catch {
-      this.catalogError.set('Não foi possível carregar tipos e meios de pagamento.');
+      this.toast.error('Não foi possível carregar tipos e meios de pagamento.');
     } finally {
       this.catalogLoading.set(false);
     }
@@ -382,7 +384,7 @@ export class ContributionsComponent implements OnInit {
     if (!item || this.deletingBusy() || this.stale()) return;
     this.voidReason.markAsTouched();
     if (this.voidReason.invalid) {
-      this.deleteError.set('O motivo deve ter no máximo 2000 caracteres.');
+      this.toast.warning('O motivo deve ter no máximo 2000 caracteres.');
       return;
     }
     this.deleteError.set('');
@@ -395,12 +397,12 @@ export class ContributionsComponent implements OnInit {
       });
       if (this.destroyRef.destroyed) return;
       this.confirmDialog?.close();
-      this.notice.set('Contribuição anulada com sucesso.');
+      this.toast.success('Contribuição anulada com sucesso.');
       await this.loadList(1);
     } catch (error) {
       if (this.destroyRef.destroyed) return;
       this.stale.set(this.isStaleContribution(error));
-      this.deleteError.set(this.mutationError(error, 'anular'));
+      this.toast.error(this.mutationError(error, 'anular'));
     } finally {
       if (!this.destroyRef.destroyed) this.deletingBusy.set(false);
     }
@@ -450,22 +452,22 @@ export class ContributionsComponent implements OnInit {
     const values = this.form.getRawValue();
     const amount = values.amount.trim();
     if (this.form.invalid || !/^\d{1,12}(\.\d{1,2})?$/.test(amount) || !/[1-9]/.test(amount)) {
-      this.formError.set(
+      this.toast.warning(
         'Preencha os campos obrigatórios e informe um valor positivo com até duas casas decimais.',
       );
       return;
     }
     if (!this.types().some((type) => type.id === values.contributionTypeId) ||
         !this.methods().some((method) => method.id === values.paymentMethodId)) {
-      this.formError.set('Selecione um tipo de contribuição e um meio de pagamento ativos.');
+      this.toast.warning('Selecione um tipo de contribuição e um meio de pagamento ativos.');
       return;
     }
     if (this.requiresMember() && !this.selectedMember()) {
-      this.formError.set('Selecione um membro para este tipo de contribuição.');
+      this.toast.warning('Selecione um membro para este tipo de contribuição.');
       return;
     }
     if (values.memberSearch.trim() && !this.selectedMember()) {
-      this.formError.set('Selecione um membro da lista ou limpe a busca.');
+      this.toast.warning('Selecione um membro da lista ou limpe a busca.');
       return;
     }
     const payload: CreateContribution = {
@@ -480,7 +482,7 @@ export class ContributionsComponent implements OnInit {
     const item = this.editing();
     const serialized = JSON.stringify(payload);
     if (!item && this.submittedPayload && this.submittedPayload !== serialized) {
-      this.formError.set(
+      this.toast.warning(
         'Para alterar os dados após uma tentativa, feche e abra um novo cadastro.',
       );
       return;
@@ -500,7 +502,7 @@ export class ContributionsComponent implements OnInit {
       if (this.destroyRef.destroyed) return;
       this.saving.set(false);
       this.closeDialog();
-      this.notice.set(item ? 'Contribuição atualizada com sucesso.' : 'Contribuição registrada com sucesso.');
+      this.toast.success(item ? 'Contribuição atualizada com sucesso.' : 'Contribuição registrada com sucesso.');
       await this.loadList(1);
     } catch (error) {
       if (this.destroyRef.destroyed) return;
@@ -512,9 +514,9 @@ export class ContributionsComponent implements OnInit {
       }
       if (item) {
         this.stale.set(this.isStaleContribution(error));
-        this.formError.set(this.mutationError(error, 'editar'));
+        this.toast.error(this.mutationError(error, 'editar'));
       } else {
-        this.formError.set(this.errorMessage(error));
+        this.toast.error(this.errorMessage(error));
       }
     } finally {
       if (!this.destroyRef.destroyed) this.saving.set(false);

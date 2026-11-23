@@ -2,19 +2,12 @@
   <div class="two-factor-content">
     <a class="brand brand-mobile" routerLink="/login" aria-label="IBG Gestão, início">ibg</a>
 
-    @if (view() === 'loading') {
-      <div class="invite-state" aria-live="polite">
-        <span class="invite-loader" aria-hidden="true"></span>
-        <h1 id="two-factor-title">Preparando sua segurança</h1>
-        <p>Verificando o acesso em duas etapas...</p>
-      </div>
-    } @else if (view() === 'error') {
+    @if (view() === 'error') {
       <div class="invite-state" role="alert">
         <span class="invite-state-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><use href="icons/alert.svg#alert" /></svg>
         </span>
         <h1 id="two-factor-title">Não foi possível continuar</h1>
-        <p>{{ feedback() }}</p>
         <button class="invite-retry-button" type="button" (click)="loadStatus()">
           Tentar novamente
         </button>
@@ -106,18 +99,9 @@
           }
         </div>
 
-        @if (feedback()) {
-          <p class="form-feedback two-factor-feedback" role="alert">{{ feedback() }}</p>
-        }
 
         <button class="submit-button" type="submit" [disabled]="isSubmitting()">
-          {{
-            isSubmitting()
-              ? 'Verificando...'
-              : view() === 'setup'
-                ? 'Ativar proteção e continuar'
-                : 'Verificar e entrar'
-          }}
+          {{ view() === 'setup' ? 'Ativar proteção e continuar' : 'Verificar e entrar' }}
         </button>
       </form>
 

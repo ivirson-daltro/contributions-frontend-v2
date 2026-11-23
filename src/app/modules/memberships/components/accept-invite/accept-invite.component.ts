@@ -5,6 +5,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { InvitationPreview } from '../../dtos/invitation-preview.dto';
 import { InvitationService } from '../../services/invitation.service';
+import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 type InvitationView = 'loading' | 'ready' | 'success' | 'unavailable' | 'error' | 'expired';
 
@@ -18,6 +20,8 @@ export class AcceptInviteComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly invitationService = inject(InvitationService);
+  private readonly loading = inject(GlobalLoadingService);
+  private readonly toast = inject(ToastService);
 
   protected readonly view = signal<InvitationView>('loading');
   protected readonly invitation = signal<InvitationPreview | null>(null);
@@ -54,7 +58,7 @@ export class AcceptInviteComponent implements OnInit {
 
   protected async loadPreview(token = this.token()): Promise<void> {
     this.view.set('loading');
-    this.feedback.set('');
+    this.loading.show();
     try {
       const preview = await this.invitationService.getPreview(token);
       this.invitation.set(preview);
@@ -84,12 +88,14 @@ export class AcceptInviteComponent implements OnInit {
         this.view.set('unavailable');
       } else {
         this.view.set('error');
-        this.feedback.set(
+        this.toast.error(
           error instanceof HttpErrorResponse && error.status === 0
             ? 'Não foi possível conectar à API. Verifique a conexão e tente novamente.'
             : 'Não foi possível consultar o convite. Tente novamente.',
         );
       }
+    } finally {
+      this.loading.hide();
     }
   }
 
@@ -117,7 +123,7 @@ export class AcceptInviteComponent implements OnInit {
           this.form.controls.password.value,
         );
         if (authError) {
-          this.feedback.set(
+          this.toast.error(
             'Não foi possível entrar com este convite. Confira sua senha e tente novamente.',
           );
           return;
@@ -133,7 +139,7 @@ export class AcceptInviteComponent implements OnInit {
           userEmail.toLocaleLowerCase('en-US') !== preview.email.toLocaleLowerCase('en-US')
         ) {
           await this.authService.signOut();
-          this.feedback.set('A conta autenticada não corresponde ao e-mail deste convite.');
+          this.toast.error('A conta autenticada não corresponde ao e-mail deste convite.');
           return;
         }
 
@@ -147,8 +153,9 @@ export class AcceptInviteComponent implements OnInit {
 
       this.form.disable();
       this.view.set('success');
+      this.toast.success('Convite aceito. Seu acesso à igreja foi ativado.');
     } catch (error) {
-      this.feedback.set(this.acceptanceErrorMessage(error));
+      this.toast.error(this.acceptanceErrorMessage(error));
       if (this.getErrorCode(error) === 'INVITATION_EXPIRED') {
         this.view.set('expired');
       }

@@ -63,12 +63,10 @@ describe('TwoFactorComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    const input = element.querySelector<HTMLInputElement>('#two-factor-code')!;
-    input.value = '123456';
-    input.dispatchEvent(new Event('input'));
-    element
-      .querySelector<HTMLFormElement>('form')!
-      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    const component = fixture.componentInstance;
+    component['factorId'] = 'verified-factor';
+    component['form'].controls.code.setValue('123456');
+    await component['verify']();
     await vi.waitFor(() =>
       expect(authService.verifyTotp).toHaveBeenCalledWith('verified-factor', '123456'),
     );

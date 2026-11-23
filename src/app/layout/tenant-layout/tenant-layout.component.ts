@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ActivatedRoute,
@@ -10,6 +10,8 @@ import {
 import { AuthService } from '../../core/auth/services/auth.service';
 import { TenantContextService } from '../../core/tenant/services/tenant-context.service';
 import { ThemeService } from '../../core/theme/theme.service';
+import { GlobalLoadingService } from '../../core/ui/global-loading.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 type TenantView = 'loading' | 'ready' | 'error' | 'denied';
 
@@ -25,6 +27,8 @@ export class TenantLayoutComponent implements OnInit {
   protected readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly theme = inject(ThemeService);
+  private readonly loading = inject(GlobalLoadingService);
+  private readonly toast = inject(ToastService);
 
   protected readonly view = signal<TenantView>('loading');
   protected readonly feedback = signal('');
@@ -32,6 +36,11 @@ export class TenantLayoutComponent implements OnInit {
   protected readonly displayName = this.context.displayName;
   protected readonly isDarkTheme = this.theme.isDarkTheme;
   protected tenantSlug = '';
+  private readonly syncContextEffect = effect(() => {
+    this.context.status();
+    this.context.current();
+    this.syncContext();
+  });
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
@@ -77,7 +86,7 @@ export class TenantLayoutComponent implements OnInit {
       await this.authService.signOut();
       await this.router.navigate(['/login']);
     } catch {
-      this.feedback.set('Não foi possível encerrar a sessão. Tente novamente.');
+      this.toast.error('Não foi possível encerrar a sessão. Tente novamente.');
     }
   }
 
@@ -85,25 +94,30 @@ export class TenantLayoutComponent implements OnInit {
     const slug = this.tenantSlug;
     const tenant = this.context.current();
     if (this.context.status() === 'denied') {
+      this.loading.hide();
       this.view.set('denied');
       this.feedback.set('');
       return;
     }
     if (this.context.status() === 'error') {
+      this.loading.hide();
       this.view.set('error');
       this.feedback.set('Não foi possível validar seu acesso ao painel. Tente novamente.');
       return;
     }
     if (this.context.status() === 'loading') {
+      this.loading.show();
       this.view.set('loading');
       return;
     }
     if (!slug || !tenant || tenant.membership.slug !== slug) {
+      this.loading.hide();
       this.view.set('error');
       this.feedback.set('Não foi possível validar o contexto da igreja.');
       return;
     }
     this.feedback.set('');
+    this.loading.hide();
     this.view.set('ready');
   }
 }

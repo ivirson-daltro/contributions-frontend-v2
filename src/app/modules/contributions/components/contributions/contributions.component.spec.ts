@@ -3,6 +3,11 @@ import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { ContributionsService } from '../../services/contributions.service';
 import { ContributionsComponent } from './contributions.component';
+import { ToastService } from '../../../../core/ui/toast.service';
+
+function toastMessages(): string {
+  return TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' ');
+}
 
 describe('ContributionsComponent', () => {
   const service = {
@@ -137,7 +142,9 @@ describe('ContributionsComponent', () => {
     element.querySelector<HTMLFormElement>('.contributions-filters')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
     expect(details.open).toBe(true);
-    expect(element.querySelector('[role="alert"]')?.textContent).toContain('data inicial');
+    expect(toastMessages()).toContain('data inicial');
+    const toastService = TestBed.inject(ToastService);
+    for (const toast of toastService.toasts()) toastService.dismiss(toast.id);
     expect(service.list).toHaveBeenCalledTimes(calls);
   });
 
@@ -181,8 +188,10 @@ describe('ContributionsComponent', () => {
     filters.patchValue({ from: '2026-12-01' });
     form.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
-    expect(element.querySelector('[role="alert"]')?.textContent).toContain('data inicial');
+    expect(toastMessages()).toContain('data inicial');
     details.open = true;
+    const toastService = TestBed.inject(ToastService);
+    for (const toast of toastService.toasts()) toastService.dismiss(toast.id);
     const clear = Array.from(element.querySelectorAll<HTMLButtonElement>('.contributions-filters button'))
       .find((button) => button.textContent?.includes('Limpar filtros'))!;
     clear.click();
@@ -193,7 +202,7 @@ describe('ContributionsComponent', () => {
     });
     expect(details.open).toBe(false);
     expect(details.querySelector('summary')?.textContent).toContain('Todas as datas');
-    expect(element.querySelector('[role="alert"]')).toBeNull();
+    expect(toastMessages()).not.toContain('data inicial');
     expect(service.list).toHaveBeenLastCalledWith(
       'token',
       'tenant',
@@ -209,17 +218,17 @@ describe('ContributionsComponent', () => {
     const filters = fixture.componentInstance['filters'];
     button.click();
     fixture.detectChanges();
-    expect(element.querySelector('[role="alert"]')?.textContent).toContain('datas inicial e final');
+    expect(toastMessages()).toContain('datas inicial e final');
     expect(details.open).toBe(true);
 
     filters.patchValue({ from: '2025-01-01', to: '2024-12-31' });
     button.click();
     fixture.detectChanges();
-    expect(element.querySelector('[role="alert"]')?.textContent).toContain('data inicial');
+    expect(toastMessages()).toContain('data inicial');
     filters.patchValue({ from: '2024-01-01', to: '2025-01-01' });
     button.click();
     fixture.detectChanges();
-    expect(element.querySelector('[role="alert"]')?.textContent).toContain('366 dias');
+    expect(toastMessages()).toContain('366 dias');
     expect(service.report).not.toHaveBeenCalled();
   });
 
@@ -270,12 +279,12 @@ describe('ContributionsComponent', () => {
     component['filters'].patchValue({ from: '2026-11-01', to: '2026-11-30' });
     service.report.mockRejectedValueOnce(new HttpErrorResponse({ status: 403 }));
     await component['generateReport'](details);
-    expect(component['reportError']()).toContain('permissão');
+    expect(toastMessages()).toContain('permissão');
     expect(component['reportLoading']()).toBe(false);
 
     service.report.mockResolvedValueOnce(new Blob(['not a PDF'], { type: 'text/plain' }));
     await component['generateReport'](details);
-    expect(component['reportError']()).toContain('Não foi possível gerar');
+    expect(toastMessages()).toContain('Não foi possível gerar');
     expect(component['reportLoading']()).toBe(false);
   });
 
@@ -293,7 +302,7 @@ describe('ContributionsComponent', () => {
     dialog.querySelector('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
     expect(service.create).not.toHaveBeenCalled();
-    expect(dialog.textContent).toContain('Selecione um membro');
+    expect(toastMessages()).toContain('Selecione um membro');
   });
 
   it('rejects zero and values exceeding the API amount limit', async () => {
@@ -306,10 +315,10 @@ describe('ContributionsComponent', () => {
       amount: '0.00',
     });
     await component['save']();
-    expect(component['formError']()).toContain('valor positivo');
+    expect(toastMessages()).toContain('valor positivo');
     component['form'].controls.amount.setValue('1000000000000.00');
     await component['save']();
-    expect(component['formError']()).toContain('valor positivo');
+    expect(toastMessages()).toContain('valor positivo');
     expect(service.create).not.toHaveBeenCalled();
   });
 
@@ -440,7 +449,7 @@ describe('ContributionsComponent', () => {
     }));
     await fixture.componentInstance['deleteContribution']();
     fixture.detectChanges();
-    expect(dialog.querySelector('[role="alert"]')?.textContent).toContain('atualizar a lista');
+    expect(toastMessages()).toContain('atualizar a lista');
     expect(dialog.querySelector<HTMLButtonElement>('.confirm')!.disabled).toBe(true);
     dialog.querySelector<HTMLButtonElement>('.cancel')!.click();
     await fixture.whenStable();
@@ -464,7 +473,7 @@ describe('ContributionsComponent', () => {
     }));
     await fixture.componentInstance['save']();
     fixture.detectChanges();
-    expect(dialog.querySelector('[role="alert"]')?.textContent).toContain('atualizar a lista');
+    expect(toastMessages()).toContain('atualizar a lista');
     expect(dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true);
     fixture.componentInstance['closeDialog']();
     await fixture.whenStable();

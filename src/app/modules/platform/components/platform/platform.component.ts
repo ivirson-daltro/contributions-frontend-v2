@@ -6,6 +6,8 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
 import { IssueAdminInvitationResponse } from '../../dtos/issue-admin-invitation-response.dto';
 import { PlatformTenant } from '../../dtos/platform-tenant.dto';
 import { PlatformService } from '../../services/platform.service';
+import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 type PlatformView = 'loading' | 'ready' | 'enroll' | 'verify' | 'denied';
 
@@ -18,6 +20,8 @@ export class PlatformComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly platformService = inject(PlatformService);
   private readonly router = inject(Router);
+  private readonly loading = inject(GlobalLoadingService);
+  private readonly toast = inject(ToastService);
 
   protected readonly view = signal<PlatformView>('loading');
   protected readonly tenants = signal<PlatformTenant[]>([]);
@@ -109,7 +113,7 @@ export class PlatformComponent implements OnInit {
 
   protected async loadTenants(): Promise<void> {
     this.view.set('loading');
-    this.feedback.set('');
+    this.loading.show();
 
     try {
       this.accessToken = await this.authService.getAccessToken();
@@ -123,6 +127,8 @@ export class PlatformComponent implements OnInit {
       this.view.set('ready');
     } catch (error) {
       await this.handlePlatformError(error);
+    } finally {
+      this.loading.hide();
     }
   }
 
@@ -135,7 +141,7 @@ export class PlatformComponent implements OnInit {
       this.totpSecret.set(enrollment.secret);
       this.view.set('verify');
     } catch {
-      this.feedback.set('Não foi possível iniciar o cadastro de MFA. Tente novamente.');
+      this.toast.error('Não foi possível iniciar o cadastro de MFA. Tente novamente.');
     }
   }
 
@@ -152,7 +158,7 @@ export class PlatformComponent implements OnInit {
       this.totpSecret.set('');
       await this.loadTenants();
     } catch {
-      this.feedback.set('Código de verificação inválido ou expirado.');
+      this.toast.error('Código de verificação inválido ou expirado.');
     } finally {
       this.isSaving.set(false);
     }
@@ -191,11 +197,12 @@ export class PlatformComponent implements OnInit {
         adminEmail: '',
       });
       await this.refreshTenantList();
+      this.toast.success('Igreja criada com sucesso.');
     } catch (error) {
       if (this.getErrorCode(error) === 'SLUG_TAKEN') {
-        this.feedback.set('Este identificador já está em uso. Escolha outro.');
+        this.toast.warning('Este identificador já está em uso. Escolha outro.');
       } else {
-        this.feedback.set(this.getRequestErrorMessage(error));
+        this.toast.error(this.getRequestErrorMessage(error));
       }
     } finally {
       this.isSaving.set(false);
@@ -238,9 +245,10 @@ export class PlatformComponent implements OnInit {
       this.tenantForReissue.set(null);
       this.reissueForm.reset({ name: '', email: '' });
       await this.refreshTenantList();
+      this.toast.success('Novo convite do administrador preparado.');
     } catch (error) {
       const code = this.getErrorCode(error);
-      this.feedback.set(
+      this.toast.warning(
         code === 'TENANT_HAS_ADMIN'
           ? 'Esta igreja já tem um TENANT_ADMIN ativo. Peça a ele para convidar os demais usuários.'
           : this.getRequestErrorMessage(error),
@@ -254,9 +262,9 @@ export class PlatformComponent implements OnInit {
   protected async copyInvitationLink(): Promise<void> {
     try {
       await navigator.clipboard.writeText(this.invitationLink());
-      this.feedback.set('Link copiado. Guarde-o: ele não será exibido novamente.');
+      this.toast.success('Link copiado. Guarde-o: ele não será exibido novamente.');
     } catch {
-      this.feedback.set(
+      this.toast.error(
         'Não foi possível copiar automaticamente. Selecione e copie o link exibido.',
       );
     }
@@ -288,7 +296,7 @@ export class PlatformComponent implements OnInit {
       await this.authService.signOut();
       await this.router.navigate(['/login']);
     } catch {
-      this.feedback.set('Não foi possível encerrar a sessão. Tente novamente.');
+      this.toast.error('Não foi possível encerrar a sessão. Tente novamente.');
     }
   }
 
@@ -326,7 +334,7 @@ export class PlatformComponent implements OnInit {
       const response = await this.platformService.listTenants(this.accessToken);
       this.tenants.set(response.items);
     } catch {
-      this.feedback.set('Igreja criada, mas a lista não pôde ser atualizada. Atualize a página.');
+      this.toast.warning('Igreja criada, mas a lista não pôde ser atualizada. Atualize a página.');
     }
   }
 
@@ -340,18 +348,18 @@ export class PlatformComponent implements OnInit {
       try {
         await this.authService.signOut();
       } catch {
-        this.feedback.set('Sessão expirada; não foi possível encerrá-la automaticamente.');
+        this.toast.error('Sessão expirada; não foi possível encerrá-la automaticamente.');
       }
       await this.router.navigate(['/login']);
       return;
     }
 
     this.view.set('denied');
-    this.feedback.set(
+    const message =
       this.getErrorCode(error) === 'FORBIDDEN'
         ? 'Sua conta não tem permissão para administrar a plataforma.'
-        : this.getRequestErrorMessage(error),
-    );
+        : this.getRequestErrorMessage(error);
+    this.toast.error(message);
   }
 
   private getErrorCode(error: unknown): string | null {

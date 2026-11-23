@@ -26,4 +26,10 @@ describe('App', () => {
       document.documentElement.classList.remove('dark-theme');
     }
   });
+
+  it('renders the global loading dialog outside the route content', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.global-loading-dialog')).not.toBeNull();
+  });
 });

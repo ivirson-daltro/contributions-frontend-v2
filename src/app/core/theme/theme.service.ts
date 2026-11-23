@@ -1,9 +1,11 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
+import { ToastService } from '../ui/toast.service';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private readonly document = inject(DOCUMENT);
+  private readonly toast = inject(ToastService);
   private readonly preferenceKey = 'ibg.dashboard.theme';
   private readonly darkTheme = signal(false);
   readonly isDarkTheme = this.darkTheme.asReadonly();
@@ -15,6 +17,7 @@ export class ThemeService {
     } catch {
       this.applyTheme(false);
       this.feedback.set('Não foi possível carregar sua preferência de tema; o tema claro foi aplicado.');
+      this.toast.warning(this.feedback());
     }
   }
 
@@ -26,6 +29,7 @@ export class ThemeService {
       window.localStorage.setItem(this.preferenceKey, dark ? 'dark' : 'light');
     } catch {
       this.feedback.set('Tema aplicado nesta sessão, mas não foi possível salvar sua preferência.');
+      this.toast.warning(this.feedback());
     }
   }
 

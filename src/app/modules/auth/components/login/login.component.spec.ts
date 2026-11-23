@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PlatformService } from '../../../platform/services/platform.service';
 import { LoginComponent } from './login.component';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 describe('Login', () => {
   const authService = {
@@ -177,9 +178,8 @@ describe('Login', () => {
     await fixture.whenStable();
 
     expect(navigate).not.toHaveBeenCalled();
-    expect(element.querySelector('[role="status"]')?.textContent).toContain(
-      'Peça um convite ao administrador',
-    );
+    expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
+      .toContain('Peça um convite ao administrador');
   });
 
   it('should use a generic message for invalid credentials', async () => {
@@ -199,8 +199,7 @@ describe('Login', () => {
       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await fixture.whenStable();
 
-    expect(element.querySelector('[role="status"]')?.textContent).toContain(
-      'E-mail ou senha inválidos.',
-    );
+    expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
+      .toContain('E-mail ou senha inválidos.');
   });
 });

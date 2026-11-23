@@ -1,0 +1,117 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.global-loading-dialog {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.global-loading-dialog[open] {
+  display: grid;
+  place-items: center;
+  cursor: wait;
+}
+
+.global-loading-dialog::backdrop {
+  background: rgb(16 18 29 / 42%);
+  backdrop-filter: blur(2px);
+}
+
+.global-loading-spinner {
+  width: 52px;
+  height: 52px;
+  border: 5px solid rgb(255 255 255 / 35%);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: global-loading-spin 700ms linear infinite;
+}
+
+.global-toast-region {
+  position: fixed;
+  z-index: 10001;
+  top: 24px;
+  right: 24px;
+  display: grid;
+  width: min(380px, calc(100vw - 32px));
+  gap: 10px;
+  pointer-events: none;
+}
+
+.global-toast {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 12px 12px 12px 16px;
+  border: 1px solid;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgb(30 28 48 / 18%);
+  pointer-events: auto;
+}
+
+.global-toast.success {
+  border-color: #94c7a7;
+  color: #1f6540;
+}
+
+.global-toast.warning {
+  border-color: #dfbd78;
+  color: #80501b;
+}
+
+.global-toast.error {
+  border-color: #dfa0a0;
+  color: #963e3e;
+}
+
+.global-toast-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: currentcolor;
+  color: #fff;
+  font-weight: 800;
+}
+
+.global-toast p {
+  margin: 0;
+  color: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.global-toast button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+:host-context(.dark-theme) .global-toast {
+  border-color: #45485a;
+  background: #292c3a;
+  color: #f3f2fa;
+}
+
+@keyframes global-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

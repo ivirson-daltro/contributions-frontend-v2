@@ -4,6 +4,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PlatformService } from '../../../platform/services/platform.service';
+import { ToastService } from '../../../../core/ui/toast.service';
+import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
 
 @Component({
   host: { style: 'display: contents' },
@@ -15,9 +17,10 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly platformService = inject(PlatformService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
+  private readonly loading = inject(GlobalLoadingService);
 
   protected readonly passwordVisible = signal(false);
-  protected readonly feedback = signal('');
   protected readonly isSubmitting = signal(false);
 
   protected readonly form = new FormGroup({
@@ -33,13 +36,13 @@ export class LoginComponent {
 
   protected async submit(): Promise<void> {
     this.form.markAllAsTouched();
-    this.feedback.set('');
 
     if (this.form.invalid || this.isSubmitting()) {
       return;
     }
 
     this.isSubmitting.set(true);
+    this.loading.show();
 
     try {
       const error = await this.authService.signIn(
@@ -48,13 +51,13 @@ export class LoginComponent {
       );
 
       if (error) {
-        this.feedback.set('E-mail ou senha inválidos.');
+        this.toast.error('E-mail ou senha inválidos.');
         return;
       }
 
       const accessToken = await this.authService.getAccessToken();
       if (!accessToken) {
-        this.feedback.set('Não foi possível iniciar sua sessão. Tente novamente.');
+        this.toast.error('Não foi possível iniciar sua sessão. Tente novamente.');
         return;
       }
 
@@ -69,11 +72,12 @@ export class LoginComponent {
 
       await this.router.navigate([destination]);
     } catch {
-      this.feedback.set(
+      this.toast.error(
         'Não foi possível concluir o acesso. Verifique sua conexão e tente novamente.',
       );
     } finally {
       this.isSubmitting.set(false);
+      this.loading.hide();
     }
   }
 
@@ -94,7 +98,7 @@ export class LoginComponent {
       }
 
       if (this.getErrorCode(platformError) === 'FORBIDDEN') {
-        this.feedback.set(
+        this.toast.warning(
           'Sua conta ainda não tem acesso a uma igreja. Peça um convite ao administrador da sua igreja.',
         );
         return null;
@@ -114,7 +118,7 @@ export class LoginComponent {
   }
 
   protected requestPasswordReset(): void {
-    this.feedback.set('A recuperação de senha será disponibilizada em uma próxima etapa.');
+    this.toast.warning('A recuperação de senha será disponibilizada em uma próxima etapa.');
   }
 
   protected togglePasswordVisibility(): void {

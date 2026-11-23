@@ -1,4 +1,26 @@
-@if (theme.feedback()) {
-  <p class="global-theme-feedback" role="status">{{ theme.feedback() }}</p>
-}
 <router-outlet />
+
+<dialog
+  #loadingDialog
+  class="global-loading-dialog"
+  aria-label="Carregando"
+  aria-busy="true"
+>
+  <div class="global-loading-spinner" role="progressbar" aria-label="Carregando" aria-hidden="true"></div>
+</dialog>
+
+<section class="global-toast-region" aria-label="Notificações" aria-live="polite">
+  @for (item of toast.toasts(); track item.id) {
+    <article class="global-toast" [class]="'global-toast ' + item.type">
+      <span class="global-toast-icon" aria-hidden="true">
+        @switch (item.type) {
+          @case ('success') { ✓ }
+          @case ('warning') { ! }
+          @case ('error') { × }
+        }
+      </span>
+      <p>{{ item.message }}</p>
+      <button type="button" aria-label="Fechar notificação" (click)="toast.dismiss(item.id)">×</button>
+    </article>
+  }
+</section>

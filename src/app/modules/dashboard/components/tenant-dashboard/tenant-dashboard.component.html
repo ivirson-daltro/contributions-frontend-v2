@@ -18,14 +18,8 @@
 
         @if (view() === 'error') {
           <div class="dashboard-feedback" role="alert">
-            <span>{{ feedback() }}</span>
             <button type="button" (click)="loadDashboard()">Tentar novamente</button>
           </div>
-        } @else if (view() === 'loading') {
-          <p class="dashboard-loading" role="status">
-            <span class="loading-indicator" aria-hidden="true"></span>
-            Carregando dados do painel...
-          </p>
         }
 
         <div class="dashboard-status-row">

@@ -8,15 +8,9 @@
     <button class="platform-text-button" type="button" (click)="signOut()">Sair</button>
   </header>
 
-  @if (view() === 'loading') {
-    <section class="platform-state" aria-live="polite">
-      <span class="loading-indicator" aria-hidden="true"></span>
-      <p>Carregando dados da plataforma...</p>
-    </section>
-  } @else if (view() === 'denied') {
+  @if (view() === 'denied') {
     <section class="platform-state platform-denied" role="alert">
       <h2>Acesso não disponível</h2>
-      <p>{{ feedback() }}</p>
       <button class="platform-primary-button" type="button" (click)="signOut()">
         Voltar ao login
       </button>
@@ -57,12 +51,9 @@
             <span class="platform-field-error">Informe o código de seis dígitos.</span>
           }
           <button class="platform-primary-button" type="submit" [disabled]="isSaving()">
-            {{ isSaving() ? 'Verificando...' : 'Verificar e continuar' }}
+            Verificar e continuar
           </button>
         </form>
-      }
-      @if (feedback()) {
-        <p class="platform-feedback" role="alert">{{ feedback() }}</p>
       }
     </section>
   } @else {
@@ -89,9 +80,6 @@
         </button>
       </div>
 
-      @if (feedback()) {
-        <p class="platform-feedback" role="status">{{ feedback() }}</p>
-      }
 
       @if (invitation(); as created) {
         <section class="invitation-result" aria-labelledby="invitation-title">

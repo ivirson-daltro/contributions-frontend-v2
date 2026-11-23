@@ -2,12 +2,7 @@
   <div class="invite-content">
     <a class="brand brand-mobile" routerLink="/login" aria-label="IBG Gestão">ibg</a>
 
-    @if (view() === 'loading') {
-      <div class="invite-state" aria-live="polite">
-        <span class="invite-loader" aria-hidden="true"></span>
-        <p>Verificando seu convite...</p>
-      </div>
-    } @else if (view() === 'unavailable') {
+    @if (view() === 'unavailable') {
       <div class="invite-state" role="alert">
         <span class="invite-state-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><use href="icons/alert.svg#alert" /></svg>
@@ -25,7 +20,6 @@
           <svg viewBox="0 0 24 24"><use href="icons/alert.svg#alert" /></svg>
         </span>
         <h1 id="invite-title">Não foi possível verificar o convite</h1>
-        <p>{{ feedback() }}</p>
         <button class="invite-retry-button" type="button" (click)="loadPreview()">
           Tentar novamente
         </button>
@@ -149,9 +143,6 @@
             }
           </div>
 
-          @if (feedback()) {
-            <p class="invite-feedback" role="alert">{{ feedback() }}</p>
-          }
 
           <button class="invite-submit-button" type="submit" [disabled]="isSubmitting()">
             {{

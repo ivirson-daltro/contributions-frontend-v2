@@ -9,7 +9,6 @@
     </header>
 
     @if (isLoading()) {
-      <p class="select-church-message" role="status">Carregando suas igrejas...</p>
     } @else if (memberships().length > 0) {
       <fieldset class="church-options">
         <legend class="visually-hidden">Igrejas disponíveis</legend>
@@ -20,7 +19,7 @@
               name="church"
               [value]="membership.tenantId"
               [checked]="selectedTenantId() === membership.tenantId"
-              (change)="selectedTenantId.set(membership.tenantId); feedback.set('')"
+              (change)="selectedTenantId.set(membership.tenantId)"
             />
             <span class="church-option-copy">
               <strong>{{ membership.name }}</strong>
@@ -42,7 +41,6 @@
     }
 
     @if (feedback()) {
-      <p class="select-church-message" role="status">{{ feedback() }}</p>
     }
   </section>
 </main>

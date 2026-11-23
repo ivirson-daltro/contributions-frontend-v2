@@ -8,6 +8,7 @@ import { TenantDashboardComponent } from './tenant-dashboard.component';
 import { DashboardSeriesResponse } from '../../dtos/dashboard-series-response.dto';
 import { DashboardSummaryResponse } from '../../dtos/dashboard-summary-response.dto';
 import { TenantDashboardService } from '../../services/tenant-dashboard.service';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 describe('TenantDashboardComponent', () => {
   async function waitForSummary(fixture: ComponentFixture<TenantDashboardComponent>) {
@@ -278,9 +279,8 @@ describe('TenantDashboardComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('[role="alert"]')?.textContent).toContain(
-      'Não foi possível carregar os dados do painel',
-    );
+    expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
+      .toContain('Não foi possível carregar os dados do painel');
     expect(element.textContent).not.toContain('R$ 325,50');
   });
 });

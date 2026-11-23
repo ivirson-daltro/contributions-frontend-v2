@@ -17,7 +17,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <use href="icons/pdf.svg#pdf" />
       </svg>
-      {{ reportLoading() ? 'Gerando relatório...' : 'Gerar relatório' }}
+      Gerar relatório
     </button>
     <button
       type="button"
@@ -30,22 +30,10 @@
     </button>
   </div>
 
-  @if (reportError()) {
-    <p class="contributions-feedback" role="alert">{{ reportError() }}</p>
-  }
-  @if (notice()) {
-    <p class="contributions-notice" role="status">{{ notice() }}</p>
-  }
   @if (catalogError()) {
-    <div class="contributions-feedback" role="alert">
-      {{ catalogError() }}
-      <button type="button" (click)="loadCatalogs()">Tentar novamente</button>
-    </div>
+    <button type="button" (click)="loadCatalogs()">Tentar novamente</button>
   } @else if (!catalogLoading() && (!types().length || !methods().length)) {
-    <p class="contributions-feedback" role="status">
-      Cadastre tipos de contribuição e meios de pagamento ativos antes de registrar uma
-      contribuição.
-    </p>
+    <!-- Os catálogos vazios são indicados desativando o cadastro. -->
   }
 
   <div class="contributions-totals">
@@ -203,18 +191,10 @@
       </button>
     </form>
 
-    @if (filterError()) {
-      <p class="contributions-feedback" role="alert">{{ filterError() }}</p>
-    }
     @if (listError()) {
-      <div class="contributions-feedback" role="alert">
-        {{ listError() }}
-        <button type="button" (click)="loadList(pendingPage)">Tentar novamente</button>
-      </div>
+      <button type="button" (click)="loadList(pendingPage)">Tentar novamente</button>
     }
-    @if (listLoading()) {
-      <p class="contributions-state" role="status">Carregando contribuições...</p>
-    } @else if (list(); as result) {
+    @if (list(); as result) {
       <h2>Contribuições ativas</h2>
       @if (result.data.length) {
         <div class="contributions-table-wrap">
@@ -386,12 +366,6 @@
             autocomplete="off"
           />
         </label>
-        @if (memberLoading()) {
-          <small>Buscando membros...</small>
-        }
-        @if (memberError()) {
-          <small role="alert">{{ memberError() }}</small>
-        }
         @if (members().length) {
           <span class="member-results">
             @for (member of members(); track member.id) {
@@ -434,9 +408,6 @@
         <input type="text" formControlName="observation" maxlength="2000" />
       </label>
     </fieldset>
-    @if (formError()) {
-      <p class="contributions-feedback" role="alert">{{ formError() }}</p>
-    }
     <footer>
       <button
         type="button"
@@ -447,7 +418,7 @@
         Cancelar
       </button>
       <button type="submit" class="contributions-button primary" [disabled]="saving() || stale()">
-        {{ saving() ? 'Salvando...' : 'Salvar contribuição' }}
+        Salvar contribuição
       </button>
     </footer>
   </form>
@@ -468,7 +439,4 @@
       <textarea [formControl]="voidReason" maxlength="2000" rows="3"></textarea>
     </label>
   </fieldset>
-  @if (deleteError()) {
-    <p class="contributions-feedback" role="alert">{{ deleteError() }}</p>
-  }
 </app-custom-confirm>

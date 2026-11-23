@@ -4,6 +4,8 @@ import { TenantContextService } from '../../../../core/tenant/services/tenant-co
 import { DashboardSeriesResponse } from '../../dtos/dashboard-series-response.dto';
 import { DashboardSummaryResponse } from '../../dtos/dashboard-summary-response.dto';
 import { TenantDashboardService } from '../../services/tenant-dashboard.service';
+import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 type DashboardView = 'loading' | 'ready' | 'error';
 type ChartMetric = 'income' | 'expense';
@@ -17,6 +19,8 @@ export class TenantDashboardComponent {
   private readonly dashboardService = inject(TenantDashboardService);
   private readonly context = inject(TenantContextService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly loading = inject(GlobalLoadingService);
+  private readonly toast = inject(ToastService);
 
   protected readonly view = signal<DashboardView>('loading');
   protected readonly feedback = signal('');
@@ -79,6 +83,7 @@ export class TenantDashboardComponent {
     effect(() => {
       const tenant = this.context.current();
       this.request++;
+      this.loading.show();
       this.summary.set(null);
       this.series.set(null);
       this.lastUpdated.set(null);
@@ -105,10 +110,13 @@ export class TenantDashboardComponent {
       this.series.set(series);
       this.lastUpdated.set(Date.now());
       this.view.set('ready');
+      this.loading.hide();
     } catch {
       if (request !== this.request || this.destroyRef.destroyed) return;
       this.view.set('error');
       this.feedback.set('Não foi possível carregar os dados do painel. Tente novamente.');
+      this.toast.error(this.feedback());
+      this.loading.hide();
     }
   }
 

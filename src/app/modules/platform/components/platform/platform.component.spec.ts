@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PlatformComponent } from './platform.component';
 import { PlatformService } from '../../services/platform.service';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 describe('PlatformComponent', () => {
   const authService = {
@@ -77,15 +78,11 @@ describe('PlatformComponent', () => {
     const fixture = TestBed.createComponent(PlatformComponent);
     fixture.detectChanges();
     await vi.waitFor(() =>
-      expect(fixture.nativeElement.textContent).toContain(
-        'Sua conta não tem permissão para administrar a plataforma.',
-      ),
-    );
+      expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
+        .toContain('Sua conta não tem permissão para administrar a plataforma.'));
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Sua conta não tem permissão para administrar a plataforma.',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Acesso não disponível');
   });
 
   it('should show the one-time invitation link after creating a church', async () => {

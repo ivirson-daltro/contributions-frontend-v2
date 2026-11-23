@@ -126,10 +126,6 @@
       </div>
     </header>
 
-    @if (feedback() && view() !== 'error') {
-      <p class="dashboard-feedback" role="alert">{{ feedback() }}</p>
-    }
-
     @if (view() === 'denied') {
       <section class="dashboard-state" role="alert">
         <h1>Acesso não disponível</h1>
@@ -144,8 +140,6 @@
       </section>
     } @else if (view() === 'ready') {
       <router-outlet />
-    } @else {
-      <p class="dashboard-loading" role="status">Validando acesso...</p>
     }
   </main>
 </div>

@@ -3,6 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { SelectChurchComponent } from './select-church.component';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 describe('SelectChurchComponent', () => {
   const authService = {
@@ -109,9 +110,8 @@ describe('SelectChurchComponent', () => {
     fixture.detectChanges();
 
     expect(navigate).not.toHaveBeenCalled();
-    expect(element.querySelector('[role="status"]')?.textContent).toContain(
-      'apenas para administradores',
-    );
+    expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
+      .toContain('apenas para administradores');
   });
 
   it('should return to login when there are no active church memberships', async () => {

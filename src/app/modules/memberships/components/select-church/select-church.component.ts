@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { TenantMembership } from '../../../../core/auth/dtos/tenant-membership.dto';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 @Component({
   imports: [RouterLink],
@@ -11,6 +12,7 @@ import { TenantMembership } from '../../../../core/auth/dtos/tenant-membership.d
 export class SelectChurchComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   protected readonly memberships = signal<TenantMembership[]>([]);
   protected readonly selectedTenantId = signal('');
@@ -26,7 +28,7 @@ export class SelectChurchComponent implements OnInit {
     if (!membership) return;
 
     if (!membership.roles.includes('TENANT_ADMIN')) {
-      this.feedback.set('A área de gestão está disponível apenas para administradores da igreja.');
+      this.toast.warning('A área de gestão está disponível apenas para administradores da igreja.');
       return;
     }
 
@@ -55,7 +57,7 @@ export class SelectChurchComponent implements OnInit {
         await this.router.navigate(['/tenant', memberships[0].slug]);
       }
     } catch {
-      this.feedback.set('Não foi possível carregar suas igrejas. Tente novamente.');
+      this.toast.error('Não foi possível carregar suas igrejas. Tente novamente.');
     } finally {
       this.isLoading.set(false);
     }

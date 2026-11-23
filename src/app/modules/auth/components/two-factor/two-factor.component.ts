@@ -2,6 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
+import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
+import { ToastService } from '../../../../core/ui/toast.service';
 
 type TwoFactorView = 'loading' | 'setup' | 'verify' | 'error';
 
@@ -15,6 +17,8 @@ export class TwoFactorComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly loading = inject(GlobalLoadingService);
+  private readonly toast = inject(ToastService);
 
   protected readonly view = signal<TwoFactorView>('loading');
   protected readonly qrCode = signal('');
@@ -46,12 +50,11 @@ export class TwoFactorComponent implements OnInit {
     if (this.form.invalid || !this.factorId || this.isSubmitting()) return;
 
     this.isSubmitting.set(true);
-    this.feedback.set('');
     try {
       await this.authService.verifyTotp(this.factorId, this.form.controls.code.value);
       await this.router.navigateByUrl(this.returnUrl);
     } catch {
-      this.feedback.set('Código inválido ou expirado. Confira o aplicativo autenticador.');
+      this.toast.error('Código inválido ou expirado. Confira o aplicativo autenticador.');
       this.form.controls.code.setValue('');
     } finally {
       this.isSubmitting.set(false);
@@ -70,7 +73,7 @@ export class TwoFactorComponent implements OnInit {
       await navigator.clipboard.writeText(this.secret());
       this.secretCopied.set(true);
     } catch {
-      this.feedback.set('Não foi possível copiar. Selecione a chave e copie manualmente.');
+      this.toast.error('Não foi possível copiar. Selecione a chave e copie manualmente.');
     }
   }
 
@@ -78,7 +81,7 @@ export class TwoFactorComponent implements OnInit {
     try {
       await this.authService.signOut();
     } catch {
-      this.feedback.set('Não foi possível encerrar a sessão. Tente novamente.');
+      this.toast.error('Não foi possível encerrar a sessão. Tente novamente.');
       this.view.set('error');
       return;
     }
@@ -87,7 +90,7 @@ export class TwoFactorComponent implements OnInit {
 
   protected async loadStatus(): Promise<void> {
     this.view.set('loading');
-    this.feedback.set('');
+    this.loading.show();
     try {
       const accessToken = await this.authService.getAccessToken();
       if (!accessToken) {
@@ -115,7 +118,9 @@ export class TwoFactorComponent implements OnInit {
       this.view.set('setup');
     } catch {
       this.view.set('error');
-      this.feedback.set('Não foi possível carregar a verificação de segurança. Tente novamente.');
+      this.toast.error('Não foi possível carregar a verificação de segurança. Tente novamente.');
+    } finally {
+      this.loading.hide();
     }
   }
 }

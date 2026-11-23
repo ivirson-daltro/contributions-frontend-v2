@@ -4,6 +4,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { vi } from 'vitest';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { AcceptInviteComponent } from './accept-invite.component';
+import { ToastService } from '../../../../core/ui/toast.service';
 import { InvitationService } from '../../services/invitation.service';
 
 describe('AcceptInviteComponent', () => {
@@ -151,10 +152,8 @@ describe('AcceptInviteComponent', () => {
       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
     await vi.waitFor(() =>
-      expect(element.textContent).toContain(
-        'A conta autenticada não corresponde ao e-mail deste convite.',
-      ),
-    );
+      expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
+        .toContain('A conta autenticada não corresponde ao e-mail deste convite.'));
     expect(invitationService.accept).not.toHaveBeenCalled();
     expect(authService.signOut).toHaveBeenCalled();
   });
@@ -178,8 +177,8 @@ describe('AcceptInviteComponent', () => {
     fixture.detectChanges();
 
     await vi.waitFor(() =>
-      expect(fixture.nativeElement.textContent).toContain('Não foi possível conectar à API.'),
-    );
+      expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
+        .toContain('Não foi possível conectar à API.'));
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.invite-retry-button'),
     ).toBeTruthy();

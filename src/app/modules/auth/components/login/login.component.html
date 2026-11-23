@@ -73,13 +73,10 @@
       </button>
 
       <button class="submit-button" type="submit" [disabled]="isSubmitting()">
-        <span>{{ isSubmitting() ? 'Entrando...' : 'Entrar' }}</span>
+        <span>Entrar</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/arrow-right.svg#arrow-right" /></svg>
       </button>
 
-      @if (feedback()) {
-        <p class="form-feedback" role="status">{{ feedback() }}</p>
-      }
     </form>
 
     <aside class="invite-notice">
