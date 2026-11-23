@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { ContributionsService } from '../../services/contributions.service';
 import { ContributionsComponent } from './contributions.component';
+import { ContributionFormComponent } from '../contribution-form/contribution-form.component';
 import { ToastService } from '../../../../core/ui/toast.service';
 
 function toastMessages(): string {
@@ -14,7 +16,7 @@ describe('ContributionsComponent', () => {
     list: vi.fn(),
     listTypes: vi.fn(),
     listMethods: vi.fn(),
-    lookupMembers: vi.fn(),
+    listAllMembers: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     void: vi.fn(),
@@ -48,7 +50,7 @@ describe('ContributionsComponent', () => {
     service.listMethods
       .mockReset()
       .mockResolvedValue([{ id: 'method', description: 'Pix', kind: 'PIX' }]);
-    service.lookupMembers.mockReset().mockResolvedValue([]);
+    service.listAllMembers.mockReset().mockResolvedValue([]);
     service.create.mockReset();
     service.update.mockReset();
     service.void.mockReset();
@@ -67,6 +69,10 @@ describe('ContributionsComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     return fixture;
+  }
+
+  function contributionForm(fixture: ComponentFixture<ContributionsComponent>): ContributionFormComponent {
+    return fixture.debugElement.query(By.directive(ContributionFormComponent)).componentInstance;
   }
 
   it('shows a decorative PDF icon on the report button', async () => {
@@ -91,7 +97,7 @@ describe('ContributionsComponent', () => {
     expect(element.querySelector('.contributions-totals')?.textContent).toContain('25');
     expect(element.querySelector('.contributions-totals')?.textContent).toContain('1.000,00');
     expect(element.querySelector('tbody')?.textContent).toContain('Ana');
-    const search = element.querySelector<HTMLInputElement>('input[formControlName="q"]')!;
+    const search = element.querySelector<HTMLInputElement>('.contributions-filters app-member-select input')!;
     search.value = 'Ana';
     search.dispatchEvent(new Event('input'));
     element
@@ -102,6 +108,181 @@ describe('ContributionsComponent', () => {
       'token',
       'tenant',
       expect.objectContaining({ q: 'Ana', status: 'ACTIVE', page: 1 }),
+    );
+  });
+
+  it('filters suggestions by fragment and applies the selected member without duplicating requests', async () => {
+    service.listAllMembers.mockResolvedValue([
+      { id: '1', name: 'Ana Paula', memberType: { id: 'type', description: 'Membro' } },
+      { id: '2', name: 'João Silva', memberType: { id: 'type', description: 'Membro' } },
+    ]);
+    const fixture = await createComponent();
+    const element = fixture.nativeElement as HTMLElement;
+    const filter = element.querySelector<HTMLElement>('.contributions-filters app-member-select')!;
+    const search = filter.querySelector<HTMLInputElement>('input')!;
+    search.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    expect(filter.querySelectorAll('[role="option"]')).toHaveLength(2);
+    expect(service.listAllMembers).toHaveBeenCalledTimes(1);
+
+    search.value = 'silv';
+    search.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(filter.querySelectorAll('[role="option"]')).toHaveLength(1);
+    expect(filter.textContent).toContain('João Silva');
+    filter.querySelector<HTMLButtonElement>('[role="option"]')!.click();
+    fixture.detectChanges();
+    element.querySelector<HTMLFormElement>('.contributions-filters')!
+      .dispatchEvent(new Event('submit'));
+    expect(service.list).toHaveBeenLastCalledWith(
+      'token', 'tenant', expect.objectContaining({ memberId: '2', page: 1 }),
+    );
+    expect(service.list.mock.lastCall?.[2]).not.toHaveProperty('q');
+
+    search.value = 'Ana';
+    search.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('.contributions-filters')!
+      .dispatchEvent(new Event('submit'));
+    expect(service.list).toHaveBeenLastCalledWith(
+      'token', 'tenant', expect.objectContaining({ q: 'Ana' }),
+    );
+    expect(service.list.mock.lastCall?.[2]).not.toHaveProperty('memberId');
+
+    Array.from(element.querySelectorAll<HTMLButtonElement>('.contributions-filters button'))
+      .find((button) => button.textContent?.includes('Limpar filtros'))!.click();
+    fixture.detectChanges();
+    expect(search.value).toBe('');
+    expect(service.list).toHaveBeenLastCalledWith(
+      'token', 'tenant', expect.objectContaining({ q: '', page: 1 }),
+    );
+  });
+
+  it('shows each contribution observation instead of attachments', async () => {
+    service.list.mockResolvedValueOnce({
+      ...response,
+      data: [
+        { ...response.data[0], observation: 'Oferta para a construção', attachmentsCount: 3 },
+        { ...response.data[0], id: '2', observation: null },
+        { ...response.data[0], id: '3', observation: '   ' },
+      ],
+    });
+    const fixture = await createComponent();
+    const element = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelectorAll('tbody tr')).toHaveLength(3);
+    });
+    const headers = Array.from(element.querySelectorAll('thead th'), (header) => header.textContent?.trim());
+    expect(headers).toContain('Observação');
+    expect(headers).not.toContain('Anexos');
+    const observations = Array.from(
+      element.querySelectorAll('tbody .contribution-observation'),
+      (cell) => cell.textContent?.trim(),
+    );
+    expect(observations).toEqual(['Oferta para a construção', '—', '—']);
+  });
+
+  it('shows the displayed range on full, last and empty pages', async () => {
+    const items = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({ ...response.data[0], id: `${index}` }));
+    service.list.mockResolvedValueOnce({ ...response, data: items(20) });
+    const fixture = await createComponent();
+    const element = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('.contributions-pagination')?.textContent)
+        .toContain('1 a 20 de 25 contribuições encontradas');
+    });
+
+    service.list.mockResolvedValueOnce({
+      ...response,
+      data: items(5),
+      meta: { ...response.meta, page: 2 },
+    });
+    element.querySelector<HTMLButtonElement>('[aria-label="Próxima página"]')!.click();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('.contributions-pagination')?.textContent)
+        .toContain('21 a 25 de 25 contribuições encontradas');
+    });
+
+    service.list.mockResolvedValueOnce({
+      ...response,
+      data: [],
+      meta: { ...response.meta, page: 1, total: 0 },
+    });
+    element.querySelector<HTMLFormElement>('.contributions-filters')!
+      .dispatchEvent(new Event('submit'));
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('.contributions-pagination')?.textContent)
+        .toContain('0 a 0 de 0 contribuições encontradas');
+    });
+  });
+
+  it('changes page size, returns to the first page and preserves applied filters', async () => {
+    const fixture = await createComponent();
+    const element = fixture.nativeElement as HTMLElement;
+    const search = element.querySelector<HTMLInputElement>('.contributions-filters app-member-select input')!;
+    search.value = 'Ana';
+    search.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('.contributions-filters')!
+      .dispatchEvent(new Event('submit'));
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('[aria-label="Próxima página"]')).not.toBeNull();
+    });
+    service.list.mockResolvedValueOnce({
+      ...response,
+      meta: { ...response.meta, page: 2 },
+    });
+    element.querySelector<HTMLButtonElement>('[aria-label="Próxima página"]')!.click();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('.contributions-pagination')?.textContent).toContain('Página 2');
+    });
+
+    service.list.mockResolvedValue({
+      ...response,
+      meta: { ...response.meta, page: 1, pageSize: 50 },
+    });
+    const pageSize = element.querySelector<HTMLSelectElement>('.contributions-page-size select')!;
+    pageSize.value = '50';
+    pageSize.dispatchEvent(new Event('change'));
+    expect(service.list).toHaveBeenLastCalledWith(
+      'token', 'tenant', expect.objectContaining({ q: 'Ana', page: 1, pageSize: 50 }),
+    );
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector<HTMLSelectElement>('.contributions-page-size select')?.value).toBe('50');
+    });
+    element.querySelector<HTMLFormElement>('.contributions-filters')!
+      .dispatchEvent(new Event('submit'));
+    expect(service.list).toHaveBeenLastCalledWith(
+      'token', 'tenant', expect.objectContaining({ q: 'Ana', page: 1, pageSize: 50 }),
+    );
+  });
+
+  it('retries the selected page size after a failed request', async () => {
+    const fixture = await createComponent();
+    const element = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('.contributions-page-size select')).not.toBeNull();
+    });
+    service.list.mockRejectedValueOnce(new Error('Network'));
+    const pageSize = element.querySelector<HTMLSelectElement>('.contributions-page-size select')!;
+    pageSize.value = '10';
+    pageSize.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('.contributions-list')?.textContent).toContain('Tentar novamente');
+    });
+    const retry = Array.from(element.querySelectorAll<HTMLButtonElement>('.contributions-list button'))
+      .find((button) => button.textContent?.includes('Tentar novamente'))!;
+    retry.click();
+    expect(service.list).toHaveBeenLastCalledWith(
+      'token', 'tenant', expect.objectContaining({ page: 1, pageSize: 10 }),
     );
   });
 
@@ -293,8 +474,13 @@ describe('ContributionsComponent', () => {
     const element = fixture.nativeElement as HTMLElement;
     const dialog = element.querySelector('dialog')!;
     dialog.showModal = vi.fn();
-    element.querySelector<HTMLButtonElement>('.new-contribution-button')!.click();
-    const controls = fixture.componentInstance['form'].controls;
+    const newButton = element.querySelector<HTMLButtonElement>('.new-contribution-button')!;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(newButton.disabled).toBe(false);
+    });
+    newButton.click();
+    const controls = contributionForm(fixture)['form'].controls;
     controls.contributionTypeId.setValue('type');
     controls.paymentMethodId.setValue('method');
     controls.occurredOn.setValue('2026-11-20');
@@ -307,7 +493,7 @@ describe('ContributionsComponent', () => {
 
   it('rejects zero and values exceeding the API amount limit', async () => {
     const fixture = await createComponent();
-    const component = fixture.componentInstance;
+    const component = contributionForm(fixture);
     component['form'].patchValue({
       contributionTypeId: 'type',
       paymentMethodId: 'method',
@@ -335,7 +521,7 @@ describe('ContributionsComponent', () => {
   });
 
   it('searches and selects an active member for the contribution', async () => {
-    service.lookupMembers.mockResolvedValue([
+    service.listAllMembers.mockResolvedValue([
       { id: 'member', name: 'Ana', memberType: { id: 'type', description: 'Membro' } },
     ]);
     const fixture = await createComponent();
@@ -345,16 +531,18 @@ describe('ContributionsComponent', () => {
     element.querySelector<HTMLButtonElement>('.new-contribution-button')!.click();
     fixture.detectChanges();
 
-    const search = dialog.querySelector<HTMLInputElement>('input[formControlName="memberSearch"]')!;
+    const search = dialog.querySelector<HTMLInputElement>('app-member-select input')!;
+    search.focus();
+    search.dispatchEvent(new Event('focus'));
+    await vi.waitFor(() => expect(service.listAllMembers).toHaveBeenCalledWith('token', 'tenant'));
     search.value = 'Ana';
     search.dispatchEvent(new Event('input'));
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(dialog.querySelector('.member-results button')).not.toBeNull();
+      expect(dialog.querySelector('.member-select-options button')).not.toBeNull();
     });
-    expect(service.lookupMembers).toHaveBeenCalledWith('token', 'tenant', 'Ana');
-    dialog.querySelector<HTMLButtonElement>('.member-results button')!.click();
-    expect(fixture.componentInstance['selectedMember']()?.id).toBe('member');
+    dialog.querySelector<HTMLButtonElement>('app-member-select .member-select-options button')!.click();
+    expect(contributionForm(fixture)['selectedMember']()?.id).toBe('member');
   });
 
   it('edits an existing contribution using its version without sending attachments', async () => {
@@ -372,12 +560,12 @@ describe('ContributionsComponent', () => {
     fixture.detectChanges();
 
     expect(dialog.textContent).toContain('Editar contribuição');
-    expect(fixture.componentInstance['form'].getRawValue()).toMatchObject({
+    expect(contributionForm(fixture)['form'].getRawValue()).toMatchObject({
       amount: '850.00', memberSearch: 'Ana', occurredOn: '2026-11-12',
     });
-    fixture.componentInstance['form'].controls.amount.setValue('125.50');
+    contributionForm(fixture)['form'].controls.amount.setValue('125.50');
     service.update.mockResolvedValue(response.data[0]);
-    await fixture.componentInstance['save']();
+    await contributionForm(fixture)['save']();
     expect(service.update).toHaveBeenCalledWith('token', 'tenant', '1', {
       contributionTypeId: 'type',
       paymentMethodId: 'method',
@@ -471,11 +659,11 @@ describe('ContributionsComponent', () => {
     service.update.mockRejectedValue(new HttpErrorResponse({
       status: 409, error: { code: 'VERSION_MISMATCH' },
     }));
-    await fixture.componentInstance['save']();
+    await contributionForm(fixture)['save']();
     fixture.detectChanges();
     expect(toastMessages()).toContain('atualizar a lista');
     expect(dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true);
-    fixture.componentInstance['closeDialog']();
+    contributionForm(fixture)['closeDialog']();
     await fixture.whenStable();
     expect(service.list).toHaveBeenCalledTimes(2);
   });
@@ -486,8 +674,13 @@ describe('ContributionsComponent', () => {
     const dialog = element.querySelector('dialog')!;
     dialog.showModal = vi.fn();
     dialog.close = vi.fn();
-    element.querySelector<HTMLButtonElement>('.new-contribution-button')!.click();
-    const component = fixture.componentInstance;
+    const newButton = element.querySelector<HTMLButtonElement>('.new-contribution-button')!;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(newButton.disabled).toBe(false);
+    });
+    newButton.click();
+    const component = contributionForm(fixture);
     component['form'].patchValue({
       contributionTypeId: 'type',
       paymentMethodId: 'method',

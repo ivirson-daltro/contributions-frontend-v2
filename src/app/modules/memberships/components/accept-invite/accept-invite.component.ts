@@ -5,7 +5,6 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { InvitationPreview } from '../../dtos/invitation-preview.dto';
 import { InvitationService } from '../../services/invitation.service';
-import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
 import { ToastService } from '../../../../core/ui/toast.service';
 
 type InvitationView = 'loading' | 'ready' | 'success' | 'unavailable' | 'error' | 'expired';
@@ -20,7 +19,6 @@ export class AcceptInviteComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly invitationService = inject(InvitationService);
-  private readonly loading = inject(GlobalLoadingService);
   private readonly toast = inject(ToastService);
 
   protected readonly view = signal<InvitationView>('loading');
@@ -58,7 +56,6 @@ export class AcceptInviteComponent implements OnInit {
 
   protected async loadPreview(token = this.token()): Promise<void> {
     this.view.set('loading');
-    this.loading.show();
     try {
       const preview = await this.invitationService.getPreview(token);
       this.invitation.set(preview);
@@ -95,7 +92,6 @@ export class AcceptInviteComponent implements OnInit {
         );
       }
     } finally {
-      this.loading.hide();
     }
   }
 

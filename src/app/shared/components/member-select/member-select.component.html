@@ -1,0 +1,40 @@
+<div class="member-select" (focusout)="closeOnBlur($event)">
+  <label>
+    <span>{{ label() }} {{ required() ? '*' : (showOptionalHint() ? '(opcional)' : '') }}</span>
+    <div class="member-select-input">
+      <input
+        type="text"
+        [value]="query()"
+        [placeholder]="placeholder()"
+        maxlength="120"
+        autocomplete="off"
+        role="combobox"
+        [attr.aria-expanded]="open()"
+        (focus)="openList()"
+        (input)="filter($event)"
+        (keydown.escape)="closeList()"
+      />
+      @if (query()) {
+        <button type="button" aria-label="Limpar membro" (click)="clear()">×</button>
+      }
+    </div>
+  </label>
+
+  @if (open()) {
+    <div class="member-select-options" role="listbox">
+      @if (loading()) {
+        <span class="member-select-state">Carregando membros...</span>
+      } @else if (error()) {
+        <span class="member-select-state" role="alert">{{ error() }}</span>
+      } @else if (filteredMembers().length) {
+        @for (member of filteredMembers(); track member.id) {
+          <button type="button" role="option" (click)="select(member)">
+            {{ member.name }}
+          </button>
+        }
+      } @else {
+        <span class="member-select-state">Nenhum membro encontrado.</span>
+      }
+    </div>
+  }
+</div>

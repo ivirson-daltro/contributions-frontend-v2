@@ -2,27 +2,26 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   DestroyRef,
-  ElementRef,
   OnInit,
   ViewChild,
   computed,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { EMPTY, Subject, catchError, from, switchMap, timer } from 'rxjs';
 import { CustomConfirmComponent } from '../../../../shared/components/custom-confirm/custom-confirm.component';
-import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
+import { MemberSelectComponent } from '../../../../shared/components/member-select/member-select.component';
+import { MemberLookup } from '../../../../shared/dtos/member-lookup.dto';
+import { ContributionFormComponent } from '../contribution-form/contribution-form.component';
 import { Contribution } from '../../dtos/contribution.dto';
 import { ContributionList } from '../../dtos/contribution-list.dto';
 import { ContributionQuery } from '../../dtos/contribution-query.dto';
 import { ContributionType } from '../../dtos/contribution-type.dto';
-import { CreateContribution } from '../../dtos/create-contribution.dto';
-import { MemberLookup } from '../../dtos/member-lookup.dto';
 import { PaymentMethod } from '../../dtos/payment-method.dto';
 import { ContributionsService } from '../../services/contributions.service';
+import { isStaleContribution, mutationError } from '../../services/contribution-errors';
 import { ToastService } from '../../../../core/ui/toast.service';
 
 interface CalendarDay {
@@ -32,23 +31,34 @@ interface CalendarDay {
 
 @Component({
   selector: 'app-contributions',
-  imports: [ReactiveFormsModule, CurrencyInputComponent, CustomConfirmComponent],
+  imports: [ReactiveFormsModule, CustomConfirmComponent, ContributionFormComponent, MemberSelectComponent],
   templateUrl: './contributions.component.html',
 })
 export class ContributionsComponent implements OnInit {
   readonly accessToken = input.required<string>();
   readonly tenantId = input.required<string>();
   readonly openOnLoad = input(false);
-  @ViewChild('contributionDialog') private dialog?: ElementRef<HTMLDialogElement>;
+  private readonly contributionForm = viewChild.required(ContributionFormComponent);
+  private readonly memberFilter = viewChild.required<MemberSelectComponent>('memberFilter');
   @ViewChild(CustomConfirmComponent) private confirmDialog?: CustomConfirmComponent;
 
   private readonly service = inject(ContributionsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastService);
-  private readonly memberQueries = new Subject<string | null>();
   private listRequest = 0;
-  private idempotencyKey = '';
-  private submittedPayload: string | null = null;
+  private membersRequest: Promise<MemberLookup[]> | null = null;
+  protected readonly loadMembers = (): Promise<MemberLookup[]> => {
+    if (!this.membersRequest) {
+      this.membersRequest = this.service.listAllMembers(this.accessToken(), this.tenantId())
+        .catch((error: unknown) => {
+          this.membersRequest = null;
+          throw error;
+        });
+    }
+    return this.membersRequest;
+  };
+  protected readonly selectedFilterMember = signal<MemberLookup | null>(null);
+  protected readonly pageSizes = [10, 20, 50, 100];
   protected appliedFilters: ContributionQuery = { page: 1, pageSize: 20, status: 'ACTIVE' };
   protected pendingPage = 1;
 
@@ -62,11 +72,6 @@ export class ContributionsComponent implements OnInit {
   protected readonly catalogLoading = signal(false);
   protected readonly types = signal<ContributionType[]>([]);
   protected readonly methods = signal<PaymentMethod[]>([]);
-  protected readonly members = signal<MemberLookup[]>([]);
-  protected readonly memberLoading = signal(false);
-  protected readonly memberError = signal('');
-  protected readonly selectedMember = signal<Contribution['member']>(null);
-  protected readonly editing = signal<Contribution | null>(null);
   protected readonly deleting = signal<Contribution | null>(null);
   protected readonly deletingBusy = signal(false);
   protected readonly deleteError = signal('');
@@ -75,12 +80,16 @@ export class ContributionsComponent implements OnInit {
     nonNullable: true,
     validators: Validators.maxLength(2000),
   });
-  protected readonly saving = signal(false);
-  protected readonly formError = signal('');
   protected readonly notice = signal('');
   protected readonly pages = computed(() => {
     const meta = this.list()?.meta;
     return meta ? Math.max(1, Math.ceil(meta.total / meta.pageSize)) : 1;
+  });
+  protected readonly pageRange = computed(() => {
+    const result = this.list();
+    if (!result || !result.data.length) return { start: 0, end: 0 };
+    const start = (result.meta.page - 1) * result.meta.pageSize + 1;
+    return { start, end: Math.min(start + result.data.length - 1, result.meta.total) };
   });
   protected readonly calendarMonth = signal(this.firstOfMonth(new Date()));
 
@@ -92,38 +101,7 @@ export class ContributionsComponent implements OnInit {
     to: new FormControl('', { nonNullable: true }),
   });
 
-  protected readonly form = new FormGroup({
-    contributionTypeId: new FormControl('', { nonNullable: true, validators: Validators.required }),
-    paymentMethodId: new FormControl('', { nonNullable: true, validators: Validators.required }),
-    occurredOn: new FormControl('', { nonNullable: true, validators: Validators.required }),
-    amount: new FormControl('', { nonNullable: true, validators: Validators.required }),
-    memberSearch: new FormControl('', { nonNullable: true }),
-    observation: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) }),
-  });
-
   ngOnInit(): void {
-    this.memberQueries
-      .pipe(
-        switchMap((query) =>
-          query === null
-            ? EMPTY
-            : timer(300).pipe(
-                switchMap(() =>
-                  from(this.service.lookupMembers(this.accessToken(), this.tenantId(), query)),
-                ),
-                catchError(() => {
-                  this.memberLoading.set(false);
-                  this.toast.error('Não foi possível buscar membros. Tente novamente.');
-                  return EMPTY;
-                }),
-              ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((members) => {
-        this.members.set(members);
-        this.memberLoading.set(false);
-      });
     void this.loadList(1);
     void this.loadCatalogs();
   }
@@ -142,11 +120,22 @@ export class ContributionsComponent implements OnInit {
       if (request === this.listRequest && !this.destroyRef.destroyed) this.list.set(result);
     } catch {
       if (request === this.listRequest && !this.destroyRef.destroyed) {
-        this.toast.error('Não foi possível carregar as contribuições. Tente novamente.');
+        this.listError.set('Não foi possível carregar as contribuições. Tente novamente.');
+        this.toast.error(this.listError());
       }
     } finally {
       if (request === this.listRequest && !this.destroyRef.destroyed) this.listLoading.set(false);
     }
+  }
+
+  protected changePageSize(value: string): void {
+    const pageSize = Number(value);
+    if (!this.pageSizes.includes(pageSize)) {
+      this.toast.warning('Selecione uma quantidade válida de contribuições por página.');
+      return;
+    }
+    this.appliedFilters = { ...this.appliedFilters, page: 1, pageSize };
+    void this.loadList(1);
   }
 
   protected applyFilters(dateRange: HTMLDetailsElement): void {
@@ -158,20 +147,22 @@ export class ContributionsComponent implements OnInit {
     }
     dateRange.open = false;
     this.filterError.set('');
+    const member = this.selectedFilterMember();
     this.appliedFilters = {
-      q: values.q.trim(),
+      ...(member ? { memberId: member.id } : { q: values.q.trim() }),
       typeId: values.typeId,
       methodId: values.methodId,
       from: values.from,
       to: values.to,
       status: 'ACTIVE',
       page: 1,
-      pageSize: 20,
+      pageSize: this.appliedFilters.pageSize,
     };
     void this.loadList(1);
   }
 
   protected clearFilters(dateRange: HTMLDetailsElement): void {
+    this.memberFilter().clear();
     this.filters.reset();
     this.reportError.set('');
     this.applyFilters(dateRange);
@@ -327,40 +318,7 @@ export class ContributionsComponent implements OnInit {
   }
 
   protected openDialog(item: Contribution | null = null): void {
-    this.memberQueries.next(null);
-    this.form.reset();
-    this.editing.set(item);
-    this.stale.set(false);
-    this.selectedMember.set(item?.member ?? null);
-    this.members.set([]);
-    this.memberLoading.set(false);
-    this.memberError.set('');
-    this.formError.set('');
-    this.notice.set('');
-    this.idempotencyKey = crypto.randomUUID();
-    this.submittedPayload = null;
-    if (item) {
-      this.form.patchValue({
-        contributionTypeId: item.type.id,
-        paymentMethodId: item.method.id,
-        occurredOn: item.occurredOn,
-        amount: item.amount,
-        memberSearch: item.member?.name ?? '',
-        observation: item.observation ?? '',
-      });
-    }
-    this.dialog?.nativeElement.showModal();
-  }
-
-  protected closeDialog(): void {
-    if (this.saving()) return;
-    this.memberQueries.next(null);
-    this.dialog?.nativeElement.close();
-  }
-
-  protected preventCloseWhileSaving(event: Event): void {
-    if (this.saving()) event.preventDefault();
-    else this.memberQueries.next(null);
+    this.contributionForm().open(item);
   }
 
   protected onMutationDialogClosed(): void {
@@ -401,125 +359,10 @@ export class ContributionsComponent implements OnInit {
       await this.loadList(1);
     } catch (error) {
       if (this.destroyRef.destroyed) return;
-      this.stale.set(this.isStaleContribution(error));
-      this.toast.error(this.mutationError(error, 'anular'));
+      this.stale.set(isStaleContribution(error));
+      this.toast.error(mutationError(error, 'anular'));
     } finally {
       if (!this.destroyRef.destroyed) this.deletingBusy.set(false);
-    }
-  }
-
-  protected searchMembers(value: string): void {
-    this.selectedMember.set(null);
-    this.members.set([]);
-    this.memberError.set('');
-    const query = value.trim();
-    if (!query) {
-      this.memberLoading.set(false);
-      this.memberQueries.next(null);
-      return;
-    }
-    this.memberLoading.set(true);
-    this.memberQueries.next(query);
-  }
-
-  protected selectMember(member: MemberLookup): void {
-    this.memberQueries.next(null);
-    this.selectedMember.set(member);
-    this.form.controls.memberSearch.setValue(member.name);
-    this.members.set([]);
-    this.memberLoading.set(false);
-  }
-
-  protected requiresMember(): boolean {
-    return (
-      this.types().find((type) => type.id === this.form.controls.contributionTypeId.value)
-        ?.requiresMember ?? false
-    );
-  }
-
-  protected typeAvailable(id: string): boolean {
-    return this.types().some((type) => type.id === id);
-  }
-
-  protected methodAvailable(id: string): boolean {
-    return this.methods().some((method) => method.id === id);
-  }
-
-  protected async save(): Promise<void> {
-    if (this.saving() || this.stale()) return;
-    this.form.markAllAsTouched();
-    this.formError.set('');
-    const values = this.form.getRawValue();
-    const amount = values.amount.trim();
-    if (this.form.invalid || !/^\d{1,12}(\.\d{1,2})?$/.test(amount) || !/[1-9]/.test(amount)) {
-      this.toast.warning(
-        'Preencha os campos obrigatórios e informe um valor positivo com até duas casas decimais.',
-      );
-      return;
-    }
-    if (!this.types().some((type) => type.id === values.contributionTypeId) ||
-        !this.methods().some((method) => method.id === values.paymentMethodId)) {
-      this.toast.warning('Selecione um tipo de contribuição e um meio de pagamento ativos.');
-      return;
-    }
-    if (this.requiresMember() && !this.selectedMember()) {
-      this.toast.warning('Selecione um membro para este tipo de contribuição.');
-      return;
-    }
-    if (values.memberSearch.trim() && !this.selectedMember()) {
-      this.toast.warning('Selecione um membro da lista ou limpe a busca.');
-      return;
-    }
-    const payload: CreateContribution = {
-      contributionTypeId: values.contributionTypeId,
-      paymentMethodId: values.paymentMethodId,
-      occurredOn: values.occurredOn,
-      amount,
-      memberId: this.selectedMember()?.id ?? null,
-      observation: values.observation.trim() || null,
-      attachmentIds: [],
-    };
-    const item = this.editing();
-    const serialized = JSON.stringify(payload);
-    if (!item && this.submittedPayload && this.submittedPayload !== serialized) {
-      this.toast.warning(
-        'Para alterar os dados após uma tentativa, feche e abra um novo cadastro.',
-      );
-      return;
-    }
-    if (!item) this.submittedPayload = serialized;
-    this.saving.set(true);
-    try {
-      if (item) {
-        const { attachmentIds, ...fields } = payload;
-        await this.service.update(this.accessToken(), this.tenantId(), item.id, {
-          ...fields,
-          version: item.version,
-        });
-      } else {
-        await this.service.create(this.accessToken(), this.tenantId(), payload, this.idempotencyKey);
-      }
-      if (this.destroyRef.destroyed) return;
-      this.saving.set(false);
-      this.closeDialog();
-      this.toast.success(item ? 'Contribuição atualizada com sucesso.' : 'Contribuição registrada com sucesso.');
-      await this.loadList(1);
-    } catch (error) {
-      if (this.destroyRef.destroyed) return;
-      if (
-        error instanceof HttpErrorResponse &&
-        ['MONTH_CLOSED', 'MEMBER_REQUIRED', 'FUTURE_DATE_NOT_ALLOWED'].includes(error.error?.code)
-      ) {
-        this.submittedPayload = null;
-      }
-      if (item) {
-        this.stale.set(this.isStaleContribution(error));
-        this.toast.error(this.mutationError(error, 'editar'));
-      } else {
-        this.toast.error(this.errorMessage(error));
-      }
-    } finally {
-      if (!this.destroyRef.destroyed) this.saving.set(false);
     }
   }
 
@@ -552,36 +395,4 @@ export class ContributionsComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  private errorMessage(error: unknown): string {
-    const code = error instanceof HttpErrorResponse ? error.error?.code : null;
-    if (code === 'MONTH_CLOSED') return 'Este mês está fechado e não aceita novos lançamentos.';
-    if (code === 'MEMBER_REQUIRED') return 'Selecione um membro para este tipo de contribuição.';
-    if (code === 'FUTURE_DATE_NOT_ALLOWED') return 'A data do lançamento não pode ser futura.';
-    if (code === 'IDEMPOTENCY_KEY_REUSED')
-      return 'Esta tentativa conflita com um cadastro anterior. Confira a listagem antes de iniciar outro cadastro.';
-    return 'Não foi possível registrar a contribuição. Confira os dados e tente novamente.';
-  }
-
-  private isStaleContribution(error: unknown): boolean {
-    return error instanceof HttpErrorResponse &&
-      (error.status === 404 ||
-        ['VERSION_MISMATCH', 'CONTRIBUTION_VOIDED', 'ALREADY_VOIDED'].includes(error.error?.code));
-  }
-
-  private mutationError(error: unknown, action: 'editar' | 'anular'): string {
-    if (this.isStaleContribution(error)) {
-      return 'Esta contribuição foi alterada ou não está mais disponível. Feche esta janela para atualizar a lista.';
-    }
-    if (error instanceof HttpErrorResponse) {
-      if (error.status === 401) return 'Sua sessão expirou. Entre novamente para continuar.';
-      if (error.status === 403) return 'Você não tem permissão para alterar contribuições.';
-      if (error.error?.code === 'MONTH_CLOSED') return 'Este mês está fechado e não aceita alterações.';
-      if (error.error?.code === 'MEMBER_REQUIRED') return 'Selecione um membro para este tipo de contribuição.';
-      if (error.error?.code === 'FUTURE_DATE_NOT_ALLOWED') return 'A data do lançamento não pode ser futura.';
-      if (error.error?.code === 'INVALID_REFERENCE') {
-        return 'Tipo, meio de pagamento ou membro inválido ou inativo. Confira os dados.';
-      }
-    }
-    return `Não foi possível ${action} a contribuição. Confira os dados e tente novamente.`;
-  }
 }

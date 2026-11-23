@@ -27,7 +27,7 @@ describe('Tenant routes', () => {
     list: vi.fn(),
     listTypes: vi.fn(),
     listMethods: vi.fn(),
-    lookupMembers: vi.fn(),
+    listAllMembers: vi.fn().mockResolvedValue([]),
     create: vi.fn(),
   };
 

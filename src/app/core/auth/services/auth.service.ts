@@ -1,16 +1,38 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, InjectionToken } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { createClient, type AuthError } from '@supabase/supabase-js';
+import { createClient, isAuthImplicitGrantRedirectError, type AuthError } from '@supabase/supabase-js';
 import { environment } from '../../../../environments/environment';
 import { CurrentUserResponse } from '../dtos/current-user-response.dto';
 import { TotpFactorStatus } from '../models/totp-factor-status';
 
+export const SUPABASE_CLIENT = new InjectionToken('Supabase client', {
+  factory: () => createClient(environment.supabase.url, environment.supabase.anonKey),
+});
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly supabase = createClient(environment.supabase.url, environment.supabase.anonKey);
+  private readonly recoveryCallback = new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery';
+  private readonly supabase = inject(SUPABASE_CLIENT);
   private readonly meUrl = `${environment.apiUrl}/me`;
+  private recoveryReady = false;
+  private resolveRecovery: (() => void) | null = null;
+  private readonly recoveryEvent = new Promise<void>((resolve) => {
+    this.resolveRecovery = resolve;
+  });
+
+  constructor() {
+    this.supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session && this.recoveryCallback) {
+        this.recoveryReady = true;
+        this.resolveRecovery?.();
+        this.resolveRecovery = null;
+      } else if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
+        this.recoveryReady = false;
+      }
+    });
+  }
 
   async signIn(email: string, password: string): Promise<AuthError | null> {
     const { error } = await this.supabase.auth.signInWithPassword({
@@ -19,6 +41,44 @@ export class AuthService {
     });
 
     return error;
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const redirectTo = new URL('/reset-password', window.location.origin).toString();
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+  }
+
+  async initializePasswordRecovery(): Promise<boolean> {
+    if (!this.recoveryCallback) return false;
+    const { error } = await this.supabase.auth.initialize();
+    if (error) {
+      if (isAuthImplicitGrantRedirectError(error) || error.status === 400 || error.status === 401 || error.status === 403) {
+        return false;
+      }
+      throw error;
+    }
+    if (this.recoveryReady) return true;
+
+    return new Promise<boolean>((resolve) => {
+      const timeout = window.setTimeout(() => resolve(false), 5000);
+      void this.recoveryEvent.then(() => {
+        window.clearTimeout(timeout);
+        resolve(this.recoveryReady);
+      });
+    });
+  }
+
+  async updateRecoveredPassword(password: string): Promise<void> {
+    if (!this.recoveryReady) throw new Error('Sessão de recuperação indisponível.');
+    const { error } = await this.supabase.auth.updateUser({ password });
+    if (error) throw error;
+    this.recoveryReady = false;
+  }
+
+  async signOutRecovery(): Promise<void> {
+    const { error } = await this.supabase.auth.signOut({ scope: 'local' });
+    if (error) throw error;
   }
 
   async getAccessToken(): Promise<string | null> {

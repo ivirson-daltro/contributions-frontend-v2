@@ -20,6 +20,22 @@ export const routes: Routes = [
         title: 'Entrar | IBG Gestão',
       },
       {
+        path: 'forgot-password',
+        loadComponent: () =>
+          import('./modules/auth/components/forgot-password/forgot-password.component').then(
+            (module) => module.ForgotPasswordComponent,
+          ),
+        title: 'Recuperar senha | IBG Gestão',
+      },
+      {
+        path: 'reset-password',
+        loadComponent: () =>
+          import('./modules/auth/components/reset-password/reset-password.component').then(
+            (module) => module.ResetPasswordComponent,
+          ),
+        title: 'Redefinir senha | IBG Gestão',
+      },
+      {
         path: 'accept-invite',
         loadComponent: () =>
           import('./modules/memberships/components/accept-invite/accept-invite.component').then(

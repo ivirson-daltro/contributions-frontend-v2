@@ -62,6 +62,7 @@ describe('Login', () => {
     expect(element.querySelector('#login-title')?.textContent).toContain('Bem-vindo de volta');
     expect(element.querySelector('input[type="email"]')).toBeTruthy();
     expect(element.querySelector('input[type="password"]')).toBeTruthy();
+    expect(element.querySelector<HTMLAnchorElement>('.forgot-link')?.getAttribute('href')).toBe('/forgot-password');
   });
 
   it('should toggle password visibility', async () => {

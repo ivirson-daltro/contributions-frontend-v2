@@ -135,6 +135,23 @@ describe('TenantDashboardComponent', () => {
     expect(text).toContain('O que você precisa fazer?');
   });
 
+  it('shows decorative icons on the dashboard actions while keeping fee calculation disabled', async () => {
+    const fixture = TestBed.createComponent(TenantDashboardComponent);
+    fixture.detectChanges();
+    await waitForSummary(fixture);
+
+    const buttons = (fixture.nativeElement as HTMLElement)
+      .querySelectorAll<HTMLButtonElement>('.dashboard-status-actions button');
+    expect(buttons[0].disabled).toBe(true);
+    expect(buttons[0].textContent).toContain('Calcular taxas');
+    expect(buttons[0].querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(buttons[0].querySelector('use')?.getAttribute('href')).toBe('icons/calculator.svg#calculator');
+    expect(buttons[1].disabled).toBe(false);
+    expect(buttons[1].textContent).toContain('Atualizar');
+    expect(buttons[1].querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(buttons[1].querySelector('use')?.getAttribute('href')).toBe('icons/refresh.svg#refresh');
+  });
+
   it('should show the last successful refresh time and retain it after a failed refresh', async () => {
     const now = vi.spyOn(Date, 'now').mockReturnValue(new Date(2026, 10, 20, 9, 41).getTime());
     try {
@@ -238,16 +255,18 @@ describe('TenantDashboardComponent', () => {
     expect(item.textContent).toContain('Não informado');
   });
 
-  it('should expose the value of each chart bar in an accessible tooltip', async () => {
+  it('shows current income and expenses by default and compares each metric with the previous year', async () => {
     dashboardService.getSeries.mockResolvedValue({
       ...series,
       income: {
         ...series.income,
         current: ['325.50', ...Array<string>(11).fill('0.00')],
+        previous: ['80.00', ...Array<string>(11).fill('0.00')],
       },
       expense: {
         ...series.expense,
         current: ['120.00', ...Array<string>(11).fill('0.00')],
+        previous: ['600.00', ...Array<string>(11).fill('0.00')],
       },
     });
     const fixture = TestBed.createComponent(TenantDashboardComponent);
@@ -255,17 +274,49 @@ describe('TenantDashboardComponent', () => {
     await fixture.whenStable();
     await waitForSummary(fixture);
 
-    const bars = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.chart-bar');
+    const element = fixture.nativeElement as HTMLElement;
+    const bars = element.querySelectorAll<HTMLElement>('.chart-bar');
+    const buttons = element.querySelectorAll<HTMLButtonElement>('.chart-tabs button');
+    const legend = element.querySelector('.chart-legend')!;
+    const chart = element.querySelector('.chart-card')!;
     expect(bars).toHaveLength(24);
-    expect(bars[0].getAttribute('aria-label')).toContain('2026: R$ 325,50');
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
+    expect(chart.classList.contains('chart-income-comparison')).toBe(false);
+    expect(chart.classList.contains('chart-expense-comparison')).toBe(false);
+    expect(legend.textContent).toContain('Entradas · 2026');
+    expect(legend.textContent).toContain('Saídas · 2026');
+    expect(bars[0].getAttribute('aria-label')).toContain('Entradas · 2026: R$ 325,50');
     expect(bars[0].querySelector('.chart-tooltip')?.textContent).toContain('R$ 325,50');
-    expect(bars[1].getAttribute('aria-label')).toContain('2025: R$ 0,00');
+    expect(bars[1].getAttribute('aria-label')).toContain('Saídas · 2026: R$ 120,00');
+    expect(bars[0].style.height).toBe('100%');
+    expect(bars[2].style.height).toBe('0%');
+    expect(element.querySelector('.chart-y-labels')?.textContent).toContain('R$ 325,5');
 
-    (fixture.nativeElement as HTMLElement)
-      .querySelectorAll<HTMLButtonElement>('.chart-tabs button')[1]
-      .click();
+    buttons[1].click();
     fixture.detectChanges();
-    expect(bars[0].getAttribute('aria-label')).toContain('2026: R$ 120,00');
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('false');
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('true');
+    expect(chart.classList.contains('chart-income-comparison')).toBe(true);
+    expect(legend.textContent).toContain('Entradas · 2025');
+    expect(bars[0].getAttribute('aria-label')).toContain('Entradas · 2026: R$ 325,50');
+    expect(bars[1].getAttribute('aria-label')).toContain('Entradas · 2025: R$ 80,00');
+
+    buttons[2].click();
+    fixture.detectChanges();
+    expect(buttons[2].getAttribute('aria-pressed')).toBe('true');
+    expect(chart.classList.contains('chart-income-comparison')).toBe(false);
+    expect(chart.classList.contains('chart-expense-comparison')).toBe(true);
+    expect(legend.textContent).toContain('Saídas · 2025');
+    expect(bars[0].getAttribute('aria-label')).toContain('Saídas · 2026: R$ 120,00');
+    expect(bars[1].getAttribute('aria-label')).toContain('Saídas · 2025: R$ 600,00');
+    expect(bars[1].style.height).toBe('100%');
+    expect(element.querySelector('.chart-y-labels')?.textContent).toContain('R$ 600');
+
+    buttons[0].click();
+    fixture.detectChanges();
+    expect(chart.classList.contains('chart-expense-comparison')).toBe(false);
+    expect(bars[1].getAttribute('aria-label')).toContain('Saídas · 2026: R$ 120,00');
+    expect(dashboardService.getSeries).toHaveBeenCalledTimes(1);
   });
 
   it('should show an explicit error if either dashboard endpoint fails', async () => {

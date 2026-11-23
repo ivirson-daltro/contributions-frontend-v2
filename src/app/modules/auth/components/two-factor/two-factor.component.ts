@@ -2,7 +2,6 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
-import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
 import { ToastService } from '../../../../core/ui/toast.service';
 
 type TwoFactorView = 'loading' | 'setup' | 'verify' | 'error';
@@ -17,7 +16,6 @@ export class TwoFactorComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly loading = inject(GlobalLoadingService);
   private readonly toast = inject(ToastService);
 
   protected readonly view = signal<TwoFactorView>('loading');
@@ -90,7 +88,6 @@ export class TwoFactorComponent implements OnInit {
 
   protected async loadStatus(): Promise<void> {
     this.view.set('loading');
-    this.loading.show();
     try {
       const accessToken = await this.authService.getAccessToken();
       if (!accessToken) {
@@ -120,7 +117,6 @@ export class TwoFactorComponent implements OnInit {
       this.view.set('error');
       this.toast.error('Não foi possível carregar a verificação de segurança. Tente novamente.');
     } finally {
-      this.loading.hide();
     }
   }
 }

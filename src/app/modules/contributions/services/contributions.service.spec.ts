@@ -40,6 +40,20 @@ describe('ContributionsService', () => {
     await expect(result).resolves.toEqual(response);
   });
 
+  it('sends the selected member ID without a text query', async () => {
+    const result = service.list('token', 'tenant', {
+      memberId: 'member-id',
+      status: 'ACTIVE',
+      page: 1,
+      pageSize: 20,
+    });
+    const request = http.expectOne((req) => req.url.endsWith('/contributions'));
+    expect(request.request.params.get('memberId')).toBe('member-id');
+    expect(request.request.params.has('q')).toBe(false);
+    request.flush({ data: [], meta: { page: 1, pageSize: 20, total: 0 } });
+    await result;
+  });
+
   it('loads all pages of catalog options', async () => {
     const result = service.listTypes('token', 'tenant');
     const first = http.expectOne(
@@ -53,6 +67,27 @@ describe('ContributionsService', () => {
     );
     second.flush({ data: [{ ...option, id: '2' }], meta: { page: 2, pageSize: 100, total: 101 } });
     expect(await result).toHaveLength(101);
+  });
+
+  it('loads all active members in one unfiltered authenticated request', async () => {
+    const result = service.listAllMembers('token', 'tenant');
+    const members = Array.from({ length: 40 }, (_, index) => ({
+      id: `${index}`, name: `Membro ${index}`, memberType: { id: 'type', description: 'Membro' },
+    }));
+    const request = http.expectOne((req) => req.url.endsWith('/members/all'));
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.keys()).toEqual([]);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer token');
+    expect(request.request.headers.get('X-Tenant-Id')).toBe('tenant');
+    request.flush(members);
+    await expect(result).resolves.toEqual(members);
+  });
+
+  it('propagates errors when loading members', async () => {
+    const result = service.listAllMembers('token', 'tenant');
+    http.expectOne((req) => req.url.endsWith('/members/all'))
+      .flush('Unavailable', { status: 500, statusText: 'Server Error' });
+    await expect(result).rejects.toMatchObject({ status: 500 });
   });
 
   it('requests a PDF report using only the required period and tenant credentials', async () => {

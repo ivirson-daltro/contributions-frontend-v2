@@ -5,6 +5,6 @@ import { GlobalLoadingService } from './global-loading.service';
 
 export const globalLoadingInterceptor: HttpInterceptorFn = (request, next) => {
   const loading = inject(GlobalLoadingService);
-  loading.show();
-  return next(request).pipe(finalize(() => loading.hide()));
+  const requestId = loading.show();
+  return next(request).pipe(finalize(() => loading.hide(requestId)));
 };

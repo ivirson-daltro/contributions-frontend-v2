@@ -68,9 +68,9 @@
         }
       </div>
 
-      <button class="text-button forgot-link" type="button" (click)="requestPasswordReset()">
+      <a class="text-button forgot-link" routerLink="/forgot-password">
         Esqueci minha senha
-      </button>
+      </a>
 
       <button class="submit-button" type="submit" [disabled]="isSubmitting()">
         <span>Entrar</span>

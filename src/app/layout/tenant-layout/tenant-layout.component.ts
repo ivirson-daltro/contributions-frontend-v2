@@ -10,7 +10,6 @@ import {
 import { AuthService } from '../../core/auth/services/auth.service';
 import { TenantContextService } from '../../core/tenant/services/tenant-context.service';
 import { ThemeService } from '../../core/theme/theme.service';
-import { GlobalLoadingService } from '../../core/ui/global-loading.service';
 import { ToastService } from '../../core/ui/toast.service';
 
 type TenantView = 'loading' | 'ready' | 'error' | 'denied';
@@ -27,7 +26,6 @@ export class TenantLayoutComponent implements OnInit {
   protected readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly theme = inject(ThemeService);
-  private readonly loading = inject(GlobalLoadingService);
   private readonly toast = inject(ToastService);
 
   protected readonly view = signal<TenantView>('loading');
@@ -94,30 +92,25 @@ export class TenantLayoutComponent implements OnInit {
     const slug = this.tenantSlug;
     const tenant = this.context.current();
     if (this.context.status() === 'denied') {
-      this.loading.hide();
       this.view.set('denied');
       this.feedback.set('');
       return;
     }
     if (this.context.status() === 'error') {
-      this.loading.hide();
       this.view.set('error');
       this.feedback.set('Não foi possível validar seu acesso ao painel. Tente novamente.');
       return;
     }
     if (this.context.status() === 'loading') {
-      this.loading.show();
       this.view.set('loading');
       return;
     }
     if (!slug || !tenant || tenant.membership.slug !== slug) {
-      this.loading.hide();
       this.view.set('error');
       this.feedback.set('Não foi possível validar o contexto da igreja.');
       return;
     }
     this.feedback.set('');
-    this.loading.hide();
     this.view.set('ready');
   }
 }

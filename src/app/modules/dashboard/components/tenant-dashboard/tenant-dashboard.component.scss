@@ -477,15 +477,40 @@ app-tenant-layout {
 }
 
 .dashboard-status-actions button {
+  display: inline-flex;
   min-width: 100px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   padding: 9px 12px;
-  border: 1px solid #e0e2ea;
+  border: 1px solid #6251df;
   border-radius: 5px;
-  background: #fff;
-  color: #25283d;
+  background: #6251df;
+  color: #fff;
+  cursor: pointer;
   font: inherit;
-  text-align: left;
+  font-weight: 600;
   white-space: nowrap;
+}
+
+.dashboard-status-actions button:not(:disabled):hover {
+  background: #5140c9;
+}
+
+.dashboard-status-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.dashboard-status-actions svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
 }
 
 .dashboard-feedback {
@@ -645,23 +670,44 @@ app-tenant-layout {
 }
 
 .chart-legend i {
-  width: 8px;
+  width: 12px;
   height: 8px;
   border-radius: 2px;
 }
 
 .legend-current,
 .current-bar {
-  background: #705de3;
+  background-color: #008060;
 }
 
 .legend-previous,
 .previous-bar {
-  background: #b7aef0;
+  background-color: #c24a4a;
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 3px,
+    rgb(255 255 255 / 25%) 3px 5px
+  );
+}
+
+.chart-income-comparison .legend-previous,
+.chart-income-comparison .previous-bar {
+  background-color: #299a7a;
+}
+
+.chart-expense-comparison .legend-current,
+.chart-expense-comparison .current-bar {
+  background-color: #c24a4a;
+}
+
+.chart-expense-comparison .legend-previous,
+.chart-expense-comparison .previous-bar {
+  background-color: #d36464;
 }
 
 .chart-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
   margin-top: 11px;
 }
@@ -690,13 +736,17 @@ app-tenant-layout {
   gap: 14px;
 }
 
+.chart-plot {
+  position: relative;
+  margin-top: 35px;
+}
+
 .chart-area {
   display: grid;
   min-height: 160px;
-  grid-template-columns: repeat(auto-fit, minmax(28px, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: end;
   gap: 12px;
-  margin-top: 35px;
   padding: 0 4px 4px 45px;
   border-bottom: 1px solid #eaebf1;
   background-image: linear-gradient(to bottom, #f0f1f5 1px, transparent 1px);
@@ -707,6 +757,7 @@ app-tenant-layout {
   display: grid;
   min-width: 0;
   height: 100%;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 1fr auto;
   justify-items: center;
   gap: 8px;
@@ -716,9 +767,9 @@ app-tenant-layout {
 
 .chart-y-labels {
   position: absolute;
-  top: 80px;
-  bottom: 42px;
-  left: 18px;
+  top: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -729,6 +780,7 @@ app-tenant-layout {
 .chart-bars {
   display: flex;
   width: 100%;
+  min-width: 0;
   height: 100%;
   align-items: flex-end;
   justify-content: center;
@@ -738,7 +790,7 @@ app-tenant-layout {
 .chart-bar {
   position: relative;
   display: block;
-  width: min(12px, 38%);
+  width: min(15px, 44%);
   min-height: 0;
   border-radius: 4px 4px 0 0;
   cursor: default;
@@ -1287,11 +1339,7 @@ app-tenant-layout {
   }
 
   .chart-bar {
-    width: 7px;
-  }
-
-  .chart-y-labels {
-    left: 14px;
+    width: 9px;
   }
 
   .community-metrics > div {
@@ -1454,12 +1502,6 @@ app-tenant-layout {
 .dark-theme .action-card {
   border-color: #40395e;
   background: #302c49;
-}
-
-.dark-theme .dashboard-status-actions button {
-  border-color: #3a4055;
-  background: #202435;
-  color: #aeb4c7;
 }
 
 .dark-theme .dashboard-status-badge {

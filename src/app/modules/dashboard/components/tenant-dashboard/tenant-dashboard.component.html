@@ -30,8 +30,16 @@
             }
           </div>
           <div class="dashboard-status-actions">
-            <button type="button" disabled>Calcular taxas</button>
+            <button type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <use href="icons/calculator.svg#calculator" />
+              </svg>
+              Calcular taxas
+            </button>
             <button type="button" (click)="loadDashboard()" [disabled]="view() === 'loading'">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <use href="icons/refresh.svg#refresh" />
+              </svg>
               Atualizar
             </button>
           </div>
@@ -115,15 +123,27 @@
         </section>
 
         <div class="dashboard-primary-grid">
-          <section class="chart-card" aria-labelledby="comparison-title">
+          <section
+            class="chart-card"
+            [class.chart-income-comparison]="chartMetric() === 'income'"
+            [class.chart-expense-comparison]="chartMetric() === 'expense'"
+            aria-labelledby="comparison-title"
+          >
             <div class="card-heading">
               <div>
                 <h2 id="comparison-title">Evolução financeira</h2>
-                <div class="chart-tabs" role="tablist" aria-label="Tipo de movimento">
+                <div class="chart-tabs" role="group" aria-label="Visão do gráfico">
                   <button
                     type="button"
-                    role="tab"
-                    [attr.aria-selected]="chartMetric() === 'income'"
+                    [attr.aria-pressed]="chartMetric() === 'overview'"
+                    [class.active]="chartMetric() === 'overview'"
+                    (click)="setChartMetric('overview')"
+                  >
+                    Entradas e saídas
+                  </button>
+                  <button
+                    type="button"
+                    [attr.aria-pressed]="chartMetric() === 'income'"
                     [class.active]="chartMetric() === 'income'"
                     (click)="setChartMetric('income')"
                   >
@@ -131,8 +151,7 @@
                   </button>
                   <button
                     type="button"
-                    role="tab"
-                    [attr.aria-selected]="chartMetric() === 'expense'"
+                    [attr.aria-pressed]="chartMetric() === 'expense'"
                     [class.active]="chartMetric() === 'expense'"
                     (click)="setChartMetric('expense')"
                   >
@@ -140,76 +159,83 @@
                   </button>
                 </div>
               </div>
-              <div class="chart-legend" aria-label="Legenda do gráfico">
-                <span><i class="legend-current"></i>{{ series()?.year }}</span>
-                <span><i class="legend-previous"></i>{{ (series()?.year ?? 1) - 1 }}</span>
-              </div>
+              @if (chartComparison(); as comparison) {
+                <div class="chart-legend" aria-label="Legenda do gráfico">
+                  <span><i class="legend-current"></i>{{ comparison.first.label }}</span>
+                  <span><i class="legend-previous"></i>{{ comparison.second.label }}</span>
+                </div>
+              }
             </div>
 
-            @if (chartBars().length > 0) {
-              <div class="chart-y-labels" aria-hidden="true">
-                @for (amount of chartScaleLabels(); track $index) {
-                  <span>{{ formatAxisCurrency(amount) }}</span>
-                }
-              </div>
-              <div
-                class="chart-area"
-                role="group"
-                [attr.aria-label]="
-                  'Comparativo mensal de ' +
-                  (chartMetric() === 'income' ? 'entradas' : 'saídas') +
-                  ' em ' +
-                  (series()?.year ?? '')
-                "
-              >
-                @for (month of chartBars(); track $index) {
-                  <div class="chart-month">
-                    <div class="chart-bars">
-                      <span
-                        class="chart-bar current-bar"
-                        [style.height.%]="month.currentHeight"
-                        tabindex="0"
-                        role="img"
-                        [attr.aria-label]="
-                          month.month +
-                          ', ' +
-                          (series()?.year ?? '') +
-                          ': ' +
-                          formatCurrency(month.currentAmount.toString())
-                        "
-                      >
-                        <span class="chart-tooltip" aria-hidden="true">
-                          <span>{{ month.month }} · {{ series()?.year }}</span>
-                          <strong>{{ formatCurrency(month.currentAmount.toString()) }}</strong>
-                        </span>
-                      </span>
-                      <span
-                        class="chart-bar previous-bar"
-                        [style.height.%]="month.previousHeight"
-                        tabindex="0"
-                        role="img"
-                        [attr.aria-label]="
-                          month.month +
-                          ', ' +
-                          ((series()?.year ?? 1) - 1) +
-                          ': ' +
-                          formatCurrency(month.previousAmount.toString())
-                        "
-                      >
-                        <span class="chart-tooltip" aria-hidden="true">
-                          <span>{{ month.month }} · {{ (series()?.year ?? 1) - 1 }}</span>
-                          <strong>{{ formatCurrency(month.previousAmount.toString()) }}</strong>
-                        </span>
-                      </span>
-                    </div>
-                    <span>{{ month.month }}</span>
+            @if (chartComparison(); as comparison) {
+              @if (chartBars().length > 0) {
+                <div class="chart-plot">
+                  <div class="chart-y-labels" aria-hidden="true">
+                    @for (amount of chartScaleLabels(); track $index) {
+                      <span>{{ formatAxisCurrency(amount) }}</span>
+                    }
                   </div>
+                  <div
+                    class="chart-area"
+                    role="group"
+                    [attr.aria-label]="
+                      'Valores mensais: ' + comparison.first.label + ' e ' + comparison.second.label
+                    "
+                  >
+                    @for (month of chartBars(); track $index) {
+                      <div class="chart-month">
+                        <div class="chart-bars">
+                          <span
+                            class="chart-bar current-bar"
+                            [style.height.%]="month.firstHeight"
+                            tabindex="0"
+                            role="img"
+                            [attr.aria-label]="
+                              month.month +
+                              ', ' +
+                              comparison.first.label +
+                              ': ' +
+                              formatCurrency(month.firstAmount.toString())
+                            "
+                          >
+                            <span class="chart-tooltip" aria-hidden="true">
+                              <span>{{ month.month }} · {{ comparison.first.label }}</span>
+                              <strong>{{ formatCurrency(month.firstAmount.toString()) }}</strong>
+                            </span>
+                          </span>
+                          <span
+                            class="chart-bar previous-bar"
+                            [style.height.%]="month.secondHeight"
+                            tabindex="0"
+                            role="img"
+                            [attr.aria-label]="
+                              month.month +
+                              ', ' +
+                              comparison.second.label +
+                              ': ' +
+                              formatCurrency(month.secondAmount.toString())
+                            "
+                          >
+                            <span class="chart-tooltip" aria-hidden="true">
+                              <span>{{ month.month }} · {{ comparison.second.label }}</span>
+                              <strong>{{ formatCurrency(month.secondAmount.toString()) }}</strong>
+                            </span>
+                          </span>
+                        </div>
+                        <span>{{ month.month }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                @if (series(); as data) {
+                  <p class="chart-period">
+                    {{ chartMetric() === 'overview' ? 'Movimentação anual' : 'Comparativo anual' }}
+                    · atualização automática {{ data.year }}
+                  </p>
                 }
-              </div>
-              @if (series(); as data) {
-                <p class="chart-period">Comparativo anual · atualização automática {{ data.year }}</p>
               }
-            } @else {
+            }
+            @if (!chartBars().length) {
               <div class="chart-empty">
                 <span class="empty-chart-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">

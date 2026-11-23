@@ -50,11 +50,10 @@ export class ContributionsService {
     return this.listOptions<PaymentMethod>('payment-methods', accessToken, tenantId);
   }
 
-  lookupMembers(accessToken: string, tenantId: string, q: string): Promise<MemberLookup[]> {
+  listAllMembers(accessToken: string, tenantId: string): Promise<MemberLookup[]> {
     return firstValueFrom(
-      this.http.get<MemberLookup[]>(`${this.baseUrl}/members/lookup`, {
+      this.http.get<MemberLookup[]>(`${this.baseUrl}/members/all`, {
         headers: this.headers(accessToken, tenantId),
-        params: new HttpParams().set('q', q),
       }),
     );
   }

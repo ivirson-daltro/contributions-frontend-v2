@@ -5,7 +5,6 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PlatformService } from '../../../platform/services/platform.service';
 import { ToastService } from '../../../../core/ui/toast.service';
-import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
 
 @Component({
   host: { style: 'display: contents' },
@@ -18,7 +17,6 @@ export class LoginComponent {
   private readonly platformService = inject(PlatformService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
-  private readonly loading = inject(GlobalLoadingService);
 
   protected readonly passwordVisible = signal(false);
   protected readonly isSubmitting = signal(false);
@@ -42,7 +40,6 @@ export class LoginComponent {
     }
 
     this.isSubmitting.set(true);
-    this.loading.show();
 
     try {
       const error = await this.authService.signIn(
@@ -77,7 +74,6 @@ export class LoginComponent {
       );
     } finally {
       this.isSubmitting.set(false);
-      this.loading.hide();
     }
   }
 
@@ -115,10 +111,6 @@ export class LoginComponent {
       return null;
     }
     return typeof body.code === 'string' ? body.code : null;
-  }
-
-  protected requestPasswordReset(): void {
-    this.toast.warning('A recuperação de senha será disponibilizada em uma próxima etapa.');
   }
 
   protected togglePasswordVisibility(): void {

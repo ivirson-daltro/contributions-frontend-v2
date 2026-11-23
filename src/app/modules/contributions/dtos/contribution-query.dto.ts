@@ -1,5 +1,6 @@
 export interface ContributionQuery {
   q?: string;
+  memberId?: string;
   typeId?: string;
   methodId?: string;
   from?: string;

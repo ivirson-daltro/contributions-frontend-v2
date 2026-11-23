@@ -6,7 +6,6 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
 import { IssueAdminInvitationResponse } from '../../dtos/issue-admin-invitation-response.dto';
 import { PlatformTenant } from '../../dtos/platform-tenant.dto';
 import { PlatformService } from '../../services/platform.service';
-import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
 import { ToastService } from '../../../../core/ui/toast.service';
 
 type PlatformView = 'loading' | 'ready' | 'enroll' | 'verify' | 'denied';
@@ -20,7 +19,6 @@ export class PlatformComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly platformService = inject(PlatformService);
   private readonly router = inject(Router);
-  private readonly loading = inject(GlobalLoadingService);
   private readonly toast = inject(ToastService);
 
   protected readonly view = signal<PlatformView>('loading');
@@ -113,7 +111,6 @@ export class PlatformComponent implements OnInit {
 
   protected async loadTenants(): Promise<void> {
     this.view.set('loading');
-    this.loading.show();
 
     try {
       this.accessToken = await this.authService.getAccessToken();
@@ -128,7 +125,6 @@ export class PlatformComponent implements OnInit {
     } catch (error) {
       await this.handlePlatformError(error);
     } finally {
-      this.loading.hide();
     }
   }
 

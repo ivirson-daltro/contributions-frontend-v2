@@ -50,10 +50,15 @@
 
   <section class="contributions-list" aria-label="Lista de contribuições">
     <form class="contributions-filters" [formGroup]="filters" (ngSubmit)="applyFilters(dateRange)">
-      <label>
-        <span>Buscar membro</span>
-        <input type="search" formControlName="q" maxlength="120" placeholder="Buscar membro" />
-      </label>
+      <app-member-select
+        #memberFilter
+        [membersLoader]="loadMembers"
+        [showOptionalHint]="false"
+        label="Buscar membro"
+        placeholder="Buscar membro"
+        (queryChanged)="filters.controls.q.setValue($event)"
+        (selected)="selectedFilterMember.set($event)"
+      />
       <label>
         <span>Tipo de contribuição</span>
         <select formControlName="typeId">
@@ -96,7 +101,9 @@
                     aria-label="Mês anterior"
                     (click)="changeCalendarMonth(-1)"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-left.svg#chevron-left" /></svg>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <use href="icons/chevron-left.svg#chevron-left" />
+                    </svg>
                   </button>
                   <strong>{{ calendarMonthLabel(0) }}</strong>
                   <span aria-hidden="true"></span>
@@ -135,7 +142,9 @@
                     aria-label="Próximo mês"
                     (click)="changeCalendarMonth(1)"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <use href="icons/chevron-right.svg#chevron-right" />
+                    </svg>
                   </button>
                 </header>
                 <div class="calendar-grid calendar-weekdays" aria-hidden="true">
@@ -195,9 +204,8 @@
       <button type="button" (click)="loadList(pendingPage)">Tentar novamente</button>
     }
     @if (list(); as result) {
-      <h2>Contribuições ativas</h2>
       @if (result.data.length) {
-        <div class="contributions-table-wrap">
+        <div class="contributions-table-wrap mt-3">
           <table>
             <thead>
               <tr>
@@ -205,7 +213,7 @@
                 <th>Membro</th>
                 <th>Tipo</th>
                 <th>Meio</th>
-                <th>Anexos</th>
+                <th>Observação</th>
                 <th>Valor</th>
                 <th class="table-actions">Ações</th>
               </tr>
@@ -224,7 +232,9 @@
                   <td>
                     <span class="method-badge">{{ item.method.description }}</span>
                   </td>
-                  <td>{{ item.attachmentsCount }}</td>
+                  <td class="contribution-observation">
+                    {{ item.observation?.trim() ? item.observation : '—' }}
+                  </td>
                   <td class="contribution-amount">{{ formatCurrency(item.amount) }}</td>
                   <td class="table-actions contribution-row-actions">
                     @if (item.status === 'ACTIVE') {
@@ -278,15 +288,30 @@
         </p>
       }
       <div class="contributions-pagination">
-        <span>{{ result.meta.total }} contribuições encontradas</span>
+        <span
+          >{{ pageRange().start }} a {{ pageRange().end }} de {{ result.meta.total }} contribuições
+          encontradas</span
+        >
         <div>
+          <label class="contributions-page-size">
+            <span>Por página</span>
+            <select #pageSize (change)="changePageSize(pageSize.value)">
+              @for (size of pageSizes; track size) {
+                <option [value]="size" [selected]="size === result.meta.pageSize">
+                  {{ size }}
+                </option>
+              }
+            </select>
+          </label>
           <button
             type="button"
             (click)="loadList(result.meta.page - 1)"
             [disabled]="result.meta.page <= 1"
             aria-label="Página anterior"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-left.svg#chevron-left" /></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <use href="icons/chevron-left.svg#chevron-left" />
+            </svg>
           </button>
           <span>Página {{ result.meta.page }} de {{ pages() }}</span>
           <button
@@ -295,7 +320,9 @@
             [disabled]="result.meta.page >= pages()"
             aria-label="Próxima página"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <use href="icons/chevron-right.svg#chevron-right" />
+            </svg>
           </button>
         </div>
       </div>
@@ -303,126 +330,15 @@
   </section>
 </div>
 
-<dialog
-  #contributionDialog
-  class="contribution-dialog"
-  aria-labelledby="new-contribution-title"
-  (cancel)="preventCloseWhileSaving($event)"
-  (close)="onMutationDialogClosed()"
->
-  <form [formGroup]="form" (ngSubmit)="save()">
-    <header>
-      <div>
-        <h2 id="new-contribution-title">
-          {{ editing() ? 'Editar contribuição' : 'Nova contribuição' }}
-        </h2>
-        <p>
-          {{
-            editing()
-              ? 'Atualize os dados da contribuição.'
-              : 'Registre uma entrada com todos os detalhes.'
-          }}
-        </p>
-      </div>
-      <button
-        type="button"
-        class="dialog-close"
-        aria-label="Fechar"
-        (click)="closeDialog()"
-        [disabled]="saving()"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/close.svg#close" /></svg>
-      </button>
-    </header>
-    <fieldset class="contribution-form-grid" [disabled]="saving()">
-      <label>
-        <span>Tipo de contribuição *</span>
-        <select formControlName="contributionTypeId">
-          <option value="">Selecione</option>
-          @if (editing(); as item) {
-            @if (!typeAvailable(item.type.id)) {
-              <option [value]="item.type.id" disabled>{{ item.type.description }} (inativo)</option>
-            }
-          }
-          @for (type of types(); track type.id) {
-            <option [value]="type.id">{{ type.description }}</option>
-          }
-        </select>
-      </label>
-      <label>
-        <span>Data do lançamento *</span>
-        <input type="date" formControlName="occurredOn" />
-      </label>
-      <div class="full-width member-field">
-        <label>
-          <span>Membro {{ requiresMember() ? '*' : '(opcional)' }}</span>
-          <input
-            #memberSearch
-            type="search"
-            formControlName="memberSearch"
-            maxlength="120"
-            placeholder="Buscar membro"
-            (input)="searchMembers(memberSearch.value)"
-            autocomplete="off"
-          />
-        </label>
-        @if (members().length) {
-          <span class="member-results">
-            @for (member of members(); track member.id) {
-              <button type="button" (click)="selectMember(member)">
-                {{ member.name }} <small>{{ member.memberType.description }}</small>
-              </button>
-            }
-          </span>
-        } @else if (
-          form.controls.memberSearch.value &&
-          !selectedMember() &&
-          !memberLoading() &&
-          !memberError()
-        ) {
-          <small>Nenhum membro encontrado.</small>
-        }
-      </div>
-      <label>
-        <span>Valor (R$) *</span>
-        <app-currency-input formControlName="amount" [required]="true" />
-      </label>
-      <label>
-        <span>Meio de pagamento *</span>
-        <select formControlName="paymentMethodId">
-          <option value="">Selecione</option>
-          @if (editing(); as item) {
-            @if (!methodAvailable(item.method.id)) {
-              <option [value]="item.method.id" disabled>
-                {{ item.method.description }} (inativo)
-              </option>
-            }
-          }
-          @for (method of methods(); track method.id) {
-            <option [value]="method.id">{{ method.description }}</option>
-          }
-        </select>
-      </label>
-      <label class="full-width">
-        <span>Observação (opcional)</span>
-        <input type="text" formControlName="observation" maxlength="2000" />
-      </label>
-    </fieldset>
-    <footer>
-      <button
-        type="button"
-        class="contributions-button secondary"
-        (click)="closeDialog()"
-        [disabled]="saving()"
-      >
-        Cancelar
-      </button>
-      <button type="submit" class="contributions-button primary" [disabled]="saving() || stale()">
-        Salvar contribuição
-      </button>
-    </footer>
-  </form>
-</dialog>
+<app-contribution-form
+  [accessToken]="accessToken()"
+  [tenantId]="tenantId()"
+  [types]="types()"
+  [methods]="methods()"
+  [membersLoader]="loadMembers"
+  (saved)="loadList(1)"
+  (refreshRequested)="loadList(1)"
+/>
 
 <app-custom-confirm
   title="Excluir contribuição?"

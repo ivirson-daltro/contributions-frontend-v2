@@ -183,6 +183,11 @@ app-contributions {
   flex: 1 1 115px;
 }
 
+.contributions-filters app-member-select {
+  min-width: 0;
+  flex: 1 1 115px;
+}
+
 .contributions-filters input:not([type='checkbox']),
 .contributions-filters select,
 .date-range summary,
@@ -411,6 +416,12 @@ app-contributions {
   font-weight: 650;
 }
 
+.contributions-list td.contribution-observation {
+  max-width: 20rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .contribution-row-actions button {
   display: inline-grid;
   width: 34px;
@@ -467,6 +478,22 @@ app-contributions {
 
 .contributions-pagination {
   padding-top: 16px;
+  flex-wrap: wrap;
+}
+
+.contributions-page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contributions-page-size select {
+  padding: 4px 6px;
+  border: 1px solid #e3e5ed;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
 }
 
 .contributions-pagination button,

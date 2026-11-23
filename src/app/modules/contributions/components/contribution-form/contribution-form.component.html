@@ -1,0 +1,94 @@
+<dialog
+  #contributionDialog
+  class="contribution-dialog"
+  aria-labelledby="new-contribution-title"
+  (cancel)="preventCloseWhileSaving($event)"
+  (close)="onDialogClosed()"
+>
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <header>
+      <div>
+        <h2 id="new-contribution-title">
+          {{ editing() ? 'Editar contribuição' : 'Nova contribuição' }}
+        </h2>
+        <p>
+          {{
+            editing()
+              ? 'Atualize os dados da contribuição.'
+              : 'Registre uma entrada com todos os detalhes.'
+          }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="dialog-close"
+        aria-label="Fechar"
+        (click)="closeDialog()"
+        [disabled]="saving()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/close.svg#close" /></svg>
+      </button>
+    </header>
+    <fieldset class="contribution-form-grid" [disabled]="saving()">
+      <label>
+        <span>Tipo de contribuição *</span>
+        <select formControlName="contributionTypeId">
+          <option value="">Selecione</option>
+          @if (editing(); as item) {
+            @if (!typeAvailable(item.type.id)) {
+              <option [value]="item.type.id" disabled>{{ item.type.description }} (inativo)</option>
+            }
+          }
+          @for (type of types(); track type.id) {
+            <option [value]="type.id">{{ type.description }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Data do lançamento *</span>
+        <input type="date" formControlName="occurredOn" />
+      </label>
+      <app-member-select
+        class="full-width"
+        [membersLoader]="membersLoader()"
+        [initialName]="memberInitialName()"
+        [required]="requiresMember()"
+        label="Membro"
+        placeholder="Buscar membro"
+        (selected)="selectMember($event)"
+      />
+      <label>
+        <span>Valor (R$) *</span>
+        <app-currency-input formControlName="amount" [required]="true" />
+      </label>
+      <label>
+        <span>Meio de pagamento *</span>
+        <select formControlName="paymentMethodId">
+          <option value="">Selecione</option>
+          @if (editing(); as item) {
+            @if (!methodAvailable(item.method.id)) {
+              <option [value]="item.method.id" disabled>
+                {{ item.method.description }} (inativo)
+              </option>
+            }
+          }
+          @for (method of methods(); track method.id) {
+            <option [value]="method.id">{{ method.description }}</option>
+          }
+        </select>
+      </label>
+      <label class="full-width">
+        <span>Observação (opcional)</span>
+        <input type="text" formControlName="observation" maxlength="2000" />
+      </label>
+    </fieldset>
+    <footer>
+      <button type="button" class="contributions-button secondary" (click)="closeDialog()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button type="submit" class="contributions-button primary" [disabled]="saving() || stale()">
+        Salvar contribuição
+      </button>
+    </footer>
+  </form>
+</dialog>

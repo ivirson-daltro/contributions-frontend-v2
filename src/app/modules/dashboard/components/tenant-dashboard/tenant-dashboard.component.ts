@@ -4,11 +4,10 @@ import { TenantContextService } from '../../../../core/tenant/services/tenant-co
 import { DashboardSeriesResponse } from '../../dtos/dashboard-series-response.dto';
 import { DashboardSummaryResponse } from '../../dtos/dashboard-summary-response.dto';
 import { TenantDashboardService } from '../../services/tenant-dashboard.service';
-import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
 import { ToastService } from '../../../../core/ui/toast.service';
 
 type DashboardView = 'loading' | 'ready' | 'error';
-type ChartMetric = 'income' | 'expense';
+type ChartMetric = 'overview' | 'income' | 'expense';
 
 @Component({
   imports: [RouterLink],
@@ -19,7 +18,6 @@ export class TenantDashboardComponent {
   private readonly dashboardService = inject(TenantDashboardService);
   private readonly context = inject(TenantContextService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly loading = inject(GlobalLoadingService);
   private readonly toast = inject(ToastService);
 
   protected readonly view = signal<DashboardView>('loading');
@@ -28,7 +26,7 @@ export class TenantDashboardComponent {
   protected readonly series = signal<DashboardSeriesResponse | null>(null);
   protected readonly lastUpdated = signal<number | null>(null);
   protected readonly membership = computed(() => this.context.current()?.membership ?? null);
-  protected readonly chartMetric = signal<ChartMetric>('income');
+  protected readonly chartMetric = signal<ChartMetric>('overview');
   protected readonly payableItems = computed(() => {
     const payables = this.summary()?.payables;
     if (!payables || !Array.isArray(payables.overdue) || !Array.isArray(payables.next7Days)) {
@@ -40,37 +38,58 @@ export class TenantDashboardComponent {
       ...payables.next7Days.map((item) => ({ ...item, overdue: false })),
     ];
   });
+  protected readonly chartComparison = computed(() => {
+    const series = this.series();
+    if (!series) return null;
+
+    const metric = this.chartMetric();
+    if (metric === 'overview') {
+      return {
+        first: { label: `Entradas · ${series.year}`, amounts: series.income.current },
+        second: { label: `Saídas · ${series.year}`, amounts: series.expense.current },
+      };
+    }
+
+    const selectedSeries = metric === 'income' ? series.income : series.expense;
+    const label = metric === 'income' ? 'Entradas' : 'Saídas';
+    return {
+      first: { label: `${label} · ${series.year}`, amounts: selectedSeries.current },
+      second: { label: `${label} · ${series.year - 1}`, amounts: selectedSeries.previous },
+    };
+  });
+  protected readonly chartMaxAmount = computed(() => {
+    const comparison = this.chartComparison();
+    if (!comparison) return 0;
+    return Math.max(
+      0,
+      ...comparison.first.amounts.map(Number),
+      ...comparison.second.amounts.map(Number),
+    );
+  });
   protected readonly chartBars = computed(() => {
     const series = this.series();
-    if (!series) return [];
+    const comparison = this.chartComparison();
+    if (!series || !comparison) return [];
 
-    const selectedSeries = this.chartMetric() === 'income' ? series.income : series.expense;
-    const current = selectedSeries.current.map(Number);
-    const previous = selectedSeries.previous.map(Number);
-    const maxAmount = Math.max(0, ...current, ...previous);
+    const first = comparison.first.amounts.map(Number);
+    const second = comparison.second.amounts.map(Number);
+    const maxAmount = this.chartMaxAmount();
 
-    return selectedSeries.current.map((_amount, index) => {
-      const currentAmount = current[index];
-      const previousAmount = previous[index];
+    return first.map((firstAmount, index) => {
+      const secondAmount = second[index];
       return {
         month: this.monthLabel(series.year, index),
-        currentAmount,
-        previousAmount,
-        currentHeight: maxAmount === 0 ? 0 : Math.max(4, (currentAmount / maxAmount) * 100),
-        previousHeight: maxAmount === 0 ? 0 : Math.max(4, (previousAmount / maxAmount) * 100),
+        firstAmount,
+        secondAmount,
+        firstHeight:
+          maxAmount === 0 || firstAmount === 0 ? 0 : Math.max(4, (firstAmount / maxAmount) * 100),
+        secondHeight:
+          maxAmount === 0 || secondAmount === 0 ? 0 : Math.max(4, (secondAmount / maxAmount) * 100),
       };
     });
   });
   protected readonly chartScaleLabels = computed(() => {
-    const series = this.series();
-    if (!series) return [0, 0, 0, 0];
-
-    const selectedSeries = this.chartMetric() === 'income' ? series.income : series.expense;
-    const maxAmount = Math.max(
-      0,
-      ...selectedSeries.current.map(Number),
-      ...selectedSeries.previous.map(Number),
-    );
+    const maxAmount = this.chartMaxAmount();
     return [maxAmount, maxAmount * (2 / 3), maxAmount / 3, 0];
   });
 
@@ -83,7 +102,6 @@ export class TenantDashboardComponent {
     effect(() => {
       const tenant = this.context.current();
       this.request++;
-      this.loading.show();
       this.summary.set(null);
       this.series.set(null);
       this.lastUpdated.set(null);
@@ -110,13 +128,11 @@ export class TenantDashboardComponent {
       this.series.set(series);
       this.lastUpdated.set(Date.now());
       this.view.set('ready');
-      this.loading.hide();
     } catch {
       if (request !== this.request || this.destroyRef.destroyed) return;
       this.view.set('error');
       this.feedback.set('Não foi possível carregar os dados do painel. Tente novamente.');
       this.toast.error(this.feedback());
-      this.loading.hide();
     }
   }
 

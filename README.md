@@ -66,6 +66,13 @@ project URL and its public publishable key in
 values are exposed to the browser and must not be used for privileged
 operations; never put a `service_role` key in the frontend.
 
+Password recovery uses Supabase Auth and redirects to `/reset-password` on the
+current origin. Add the exact recovery URL for each deployed origin (and local
+development, if used) to the Supabase Auth redirect allow list. The default
+Supabase recovery email template must redirect back to the application.
+Recovery links use Supabase's default implicit flow. After a successful callback,
+the URL is cleared; refreshing the reset page requires requesting a new link.
+
 Development builds use `http://localhost:3000/v1` from
 `src/environments/environment.ts`. Production builds replace that file with
 `src/environments/environment.production.ts` and use `/v1` on the same origin.
@@ -94,6 +101,13 @@ directories; tests stay alongside the files they cover.
 The tenant contribution page lists and filters records, creates and edits contributions,
 and confirms logical deletion (annulment) with an optional reason. Edits and deletions
 use optimistic concurrency; when a record is stale, closing the dialog refreshes the list.
+The list displays each contribution's observation instead of an attachments column.
+The list shows the displayed item range and supports 10, 20, 50 or 100 items per page;
+changing the page size returns to the first page without clearing filters.
+The list and contribution create/edit dialog are separate components; successful saves
+and stale-dialog closures notify the list to refresh.
+The member selectors in the contribution filters and form share the active members loaded
+from `/members/all` and filter names locally.
 It also downloads a PDF report for a selected period of up to 366 inclusive days.
 The report includes all active contributions in that period, regardless of the
 other list filters. Attachment uploads remain unavailable.
@@ -102,6 +116,9 @@ The tenant layout validates access and hosts lazy-loaded child routes for the
 overview (`/tenant/:slug`) and contributions (`/tenant/:slug/contributions`).
 The overview's new-contribution shortcut adds `?new=1` to open the form after
 the contribution catalogs load.
+The financial chart defaults to monthly income and expenses for the current year;
+the income and expense views compare each month with the previous year.
+Income is shown in green and expenses in red; the second series is hatched.
 
 The light/dark theme selected in the tenant layout is also used by the login,
 two-factor, invitation, and church-selection screens. The preference is saved
