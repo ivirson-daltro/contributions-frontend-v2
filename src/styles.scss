@@ -1,7 +1,14 @@
 @use './app/modules/dashboard/components/tenant-dashboard/tenant-dashboard.component';
+@use './app/modules/contributions/components/contributions/contributions.component';
+
+table th.table-actions,
+table td.table-actions {
+  text-align: center;
+}
 
 :root {
   color-scheme: light;
+  font-size: 110%;
   font-family: Inter, 'Segoe UI', Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -39,7 +46,7 @@
 .select-church-eyebrow {
   margin: 0 0 8px;
   color: #6251df;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -47,13 +54,13 @@
 .select-church-card h1 {
   margin: 0;
   color: #25283d;
-  font-size: 26px;
+  font-size: 1.625rem;
 }
 
 .select-church-description {
   margin: 10px 0 24px;
   color: #65697b;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -94,12 +101,12 @@
 
 .church-option-copy strong {
   color: #25283d;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .church-option-copy span {
   color: #777b8c;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .select-church-submit {
@@ -112,7 +119,7 @@
   border-radius: 8px;
   background: #f1effb;
   color: #433775;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -213,7 +220,7 @@ a {
   display: inline-block;
   width: fit-content;
   color: inherit;
-  font-size: 30px;
+  font-size: 1.875rem;
   font-weight: 750;
   line-height: 1;
   letter-spacing: -1.5px;
@@ -232,13 +239,13 @@ a {
   border-radius: 4px;
   background: #40355f;
   color: #ded8f1;
-  font-size: 8px;
+  font-size: 0.5rem;
   letter-spacing: 0.02em;
 }
 
 .welcome-content h1 {
   margin: 25px 0 23px;
-  font-size: clamp(26px, 3.2vw, 36px);
+  font-size: clamp(1.625rem, 3.4vw, 2.25rem);
   font-weight: 600;
   line-height: 1.32;
   letter-spacing: -0.035em;
@@ -247,7 +254,7 @@ a {
 .welcome-copy {
   margin: 0;
   color: #cbc6da;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.55;
 }
 
@@ -261,12 +268,12 @@ a {
 .community-eyebrow {
   margin: 0 0 11px;
   color: #d7d1e6;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .community-card h2 {
   margin: 0 0 15px;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 500;
 }
 
@@ -283,22 +290,22 @@ a {
   grid-template-columns: 17px 67px 1fr;
   align-items: center;
   gap: 7px;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .community-card .number {
   color: #c5b7ff;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .community-card li strong {
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 600;
 }
 
 .community-card li span:last-child {
   color: #c6c1d5;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .privacy-note {
@@ -307,7 +314,7 @@ a {
   gap: 7px;
   margin: 0;
   color: #c9c4d7;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .privacy-note svg,
@@ -344,7 +351,7 @@ a {
 
 .login-header h2 {
   margin: 0 0 8px;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 650;
   letter-spacing: -0.025em;
 }
@@ -352,7 +359,7 @@ a {
 .login-header p {
   margin: 0;
   color: #737b96;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .steps {
@@ -361,7 +368,7 @@ a {
   gap: 9px;
   margin: 20px 0 26px;
   color: #78809a;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .step-current {
@@ -385,7 +392,7 @@ a {
 .field label {
   display: block;
   margin-bottom: 6px;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 500;
 }
 
@@ -399,7 +406,7 @@ a {
   outline: none;
   background: #fff;
   color: #25283d;
-  font-size: 10px;
+  font-size: 0.625rem;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
@@ -454,7 +461,7 @@ a {
   display: block;
   margin-top: 5px;
   color: #b42338;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .text-button {
@@ -463,7 +470,7 @@ a {
   background: none;
   color: #5e4ce1;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .forgot-link {
@@ -487,7 +494,7 @@ a {
   background: #6251df;
   color: #fff;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   transition: background 150ms ease;
 }
@@ -523,7 +530,7 @@ a {
 .form-feedback {
   margin: 10px 0 0;
   color: #a33142;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.45;
 }
 
@@ -545,7 +552,7 @@ a {
 .invite-notice h3 {
   margin: 0 0 6px;
   color: #25283d;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
 }
 
@@ -553,7 +560,7 @@ a {
   max-width: 250px;
   margin: 0;
   color: #78809a;
-  font-size: 9px;
+  font-size: 0.5625rem;
   line-height: 1.5;
 }
 
@@ -563,7 +570,7 @@ a {
   align-items: center;
   gap: 32px;
   color: #78809a;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .login-footer span:last-child {
@@ -588,7 +595,7 @@ a {
   display: inline-block;
   margin-bottom: 8px;
   color: #6654dc;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -597,7 +604,7 @@ a {
 .invite-state h1 {
   margin: 0 0 8px;
   color: #25283d;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 650;
   letter-spacing: -0.025em;
 }
@@ -606,7 +613,7 @@ a {
 .invite-state > p {
   margin: 0;
   color: #737b96;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.55;
 }
 
@@ -621,21 +628,21 @@ a {
   display: block;
   overflow-wrap: anywhere;
   color: #292d42;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
 }
 
 .invite-role {
   margin: 8px 0 5px;
   color: #6654dc;
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.5;
 }
 
 .invite-one-time {
   margin: 0;
   color: #737b96;
-  font-size: 9px;
+  font-size: 0.5625rem;
   line-height: 1.5;
 }
 
@@ -646,7 +653,7 @@ a {
   border-radius: 4px;
   background: #f5f4ff;
   color: #555b75;
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.5;
 }
 
@@ -662,7 +669,7 @@ a {
 
 .invite-field label {
   color: #30354b;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 500;
 }
 
@@ -675,7 +682,7 @@ a {
   outline: none;
   background: #fff;
   color: #25283d;
-  font-size: 11px;
+  font-size: 0.6875rem;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
@@ -735,7 +742,7 @@ a {
 
 .invite-field-hint,
 .invite-field-error {
-  font-size: 9px;
+  font-size: 0.5625rem;
   line-height: 1.45;
 }
 
@@ -750,7 +757,7 @@ a {
 .invite-feedback {
   margin: -4px 0 0;
   color: #a33142;
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.5;
 }
 
@@ -766,7 +773,7 @@ a {
   background: #6251df;
   color: #fff;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
@@ -785,14 +792,14 @@ a {
 .invite-terms {
   margin: 15px 0 0;
   color: #737b96;
-  font-size: 9px;
+  font-size: 0.5625rem;
   line-height: 1.5;
 }
 
 .invite-footer {
   align-self: center;
   color: #78809a;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .invite-state {
@@ -812,7 +819,7 @@ a {
 
 .invite-back-link {
   color: #5e4ce1;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-decoration: none;
 }
@@ -829,7 +836,7 @@ a {
   background: #fff;
   color: #5e4ce1;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
 }
 
@@ -849,7 +856,7 @@ a {
 }
 
 .two-factor-header h2 {
-  font-size: 24px;
+  font-size: 1.5rem;
 }
 
 .two-factor-steps {
@@ -887,14 +894,14 @@ a {
   border-radius: 50%;
   background: #6251df;
   color: #fff;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
 }
 
 .two-factor-enroll-grid h3 {
   margin: 3px 0 12px;
   color: #292d42;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.45;
 }
 
@@ -911,7 +918,7 @@ a {
 .two-factor-manual-block p {
   margin: 0 0 12px;
   color: #737b96;
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.5;
 }
 
@@ -924,7 +931,7 @@ a {
   background: #fff;
   color: #33384e;
   font-family: 'Cascadia Mono', Consolas, monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: 0.08em;
 }
 
@@ -935,7 +942,7 @@ a {
   background: transparent;
   color: #5e4ce1;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .two-factor-copy-button {
@@ -976,17 +983,17 @@ a {
 .two-factor-security-note strong {
   margin-bottom: 3px;
   color: #30354b;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .two-factor-security-note span {
   color: #78809a;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .two-factor-code-input {
   height: 44px !important;
-  font-size: 15px !important;
+  font-size: 0.9375rem !important;
   letter-spacing: 0.3em;
   text-align: center;
 }
@@ -1017,13 +1024,24 @@ a {
   border-radius: 50%;
   background: #fff1e8;
   color: #a85620;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
 }
 
 .invite-success-icon {
   background: #e8f7ef;
   color: #28794a;
+}
+
+.invite-state-icon svg,
+.invite-success-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
 }
 
 .invite-success .invite-eyebrow {
@@ -1045,6 +1063,46 @@ a {
 
 .invite-state .invite-loader + p {
   margin-top: 13px;
+}
+
+.d-flex {
+  display: flex !important;
+}
+
+.align-items-center {
+  align-items: center !important;
+}
+
+.justify-content-center {
+  justify-content: center !important;
+}
+
+.justify-content-between {
+  justify-content: space-between !important;
+}
+
+.justify-content-end {
+  justify-content: flex-end !important;
+}
+
+.me-1 {
+  margin-right: 0.25rem !important;
+}
+
+.me-2 {
+  margin-right: 0.5rem !important;
+}
+
+.me-3 {
+  margin-right: 1rem !important;
+}
+
+.me-4 {
+  margin-right: 1.5rem !important;
+}
+
+.me-5 {
+  margin-right: 3rem !important;
 }
 
 @media (max-width: 760px) {
@@ -1093,7 +1151,7 @@ a {
 
   .invite-header h1,
   .invite-state h1 {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
 
   .invite-summary {
@@ -1102,12 +1160,12 @@ a {
   }
 
   .invite-email {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .invite-role,
   .invite-one-time {
-    font-size: 10px;
+    font-size: 0.625rem;
   }
 
   .invite-form {
@@ -1116,12 +1174,12 @@ a {
 
   .invite-field label,
   .invite-submit-button {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .invite-terms,
   .invite-footer {
-    font-size: 10px;
+    font-size: 0.625rem;
   }
 
   .invite-footer {
@@ -1137,11 +1195,11 @@ a {
     display: inline-block;
     margin-bottom: 24px;
     color: #6251df;
-    font-size: 25px;
+    font-size: 1.5625rem;
   }
 
   .login-header h2 {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
 
   .steps {
@@ -1164,7 +1222,7 @@ a {
 
   .field input {
     height: 36px;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .visibility-button {
@@ -1173,12 +1231,12 @@ a {
 
   .forgot-link {
     margin: 0 0 10px;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .submit-button {
     height: 36px;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .invite-notice {
@@ -1187,11 +1245,11 @@ a {
   }
 
   .invite-notice h3 {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .invite-notice p {
-    font-size: 9px;
+    font-size: 0.5625rem;
   }
 
   .login-footer {
@@ -1199,7 +1257,7 @@ a {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    font-size: 10px;
+    font-size: 0.625rem;
   }
 
   .two-factor-footer {
@@ -1325,7 +1383,7 @@ a {
 
   .platform-brand {
     color: #6251df;
-    font-size: 30px;
+    font-size: 1.875rem;
     font-weight: 750;
     letter-spacing: -1.5px;
     text-decoration: none;
@@ -1339,14 +1397,14 @@ a {
   .platform-header-copy span,
   .platform-eyebrow {
     color: #7264d4;
-    font-size: 10px;
+    font-size: 0.625rem;
     font-weight: 700;
     letter-spacing: 0.08em;
   }
 
   .platform-header-copy h1 {
     margin: 4px 0 0;
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 650;
   }
 
@@ -1358,7 +1416,7 @@ a {
     background: #fff;
     color: #535a73;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .platform-text-button:hover,
@@ -1392,7 +1450,7 @@ a {
     align-items: center;
     gap: 10px;
     margin: 0;
-    font-size: 27px;
+    font-size: 1.6875rem;
     letter-spacing: -0.035em;
   }
 
@@ -1404,14 +1462,14 @@ a {
     border-radius: 20px;
     background: #ebe9ff;
     color: #5b4bd4;
-    font-size: 12px;
+    font-size: 0.75rem;
     letter-spacing: 0;
   }
 
   .platform-subtitle {
     margin: 7px 0 0;
     color: #777e96;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   .platform-primary-button,
@@ -1424,7 +1482,7 @@ a {
     border: 1px solid transparent;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
     transition:
       background 150ms ease,
@@ -1434,6 +1492,18 @@ a {
   .platform-primary-button {
     background: #6251df;
     color: #fff;
+    gap: 6px;
+  }
+
+  .platform-primary-button svg,
+  .invitation-dismiss svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
   }
 
   .platform-primary-button:hover {
@@ -1466,7 +1536,7 @@ a {
     border-radius: 6px;
     background: #fff8ee;
     color: #8c4a0d;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.5;
   }
 
@@ -1489,13 +1559,13 @@ a {
 
   .invitation-result h2 {
     margin: 0 0 7px;
-    font-size: 19px;
+    font-size: 1.1875rem;
   }
 
   .invitation-result > p:not(.platform-eyebrow, .invitation-warning) {
     margin: 0 0 15px;
     color: #676d83;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.5;
   }
 
@@ -1510,7 +1580,7 @@ a {
     background: transparent;
     color: #626881;
     cursor: pointer;
-    font-size: 22px;
+    font-size: 1.375rem;
   }
 
   .invitation-link-row {
@@ -1533,7 +1603,7 @@ a {
     outline: none;
     background: #fff;
     color: #292d42;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .invitation-link-row input {
@@ -1553,7 +1623,7 @@ a {
   .invitation-warning {
     margin: 10px 0 0;
     color: #8b5a22;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .create-tenant-panel {
@@ -1563,7 +1633,7 @@ a {
   .reissue-description {
     margin: -10px 0 18px;
     color: #777e96;
-    font-size: 11px;
+    font-size: 0.6875rem;
     line-height: 1.5;
   }
 
@@ -1577,7 +1647,7 @@ a {
 
   .panel-heading h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 1.25rem;
   }
 
   .step-badge,
@@ -1586,7 +1656,7 @@ a {
     border-radius: 20px;
     background: #efedff;
     color: #5d4bd7;
-    font-size: 10px;
+    font-size: 0.625rem;
     font-weight: 600;
   }
 
@@ -1606,18 +1676,18 @@ a {
   .mfa-code-form label,
   .totp-secret-label {
     color: #373c53;
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 600;
   }
 
   .field-hint {
     color: #7b8298;
-    font-size: 10px;
+    font-size: 0.625rem;
   }
 
   .platform-field-error {
     color: #b42338;
-    font-size: 10px;
+    font-size: 0.625rem;
     line-height: 1.4;
   }
 
@@ -1633,7 +1703,7 @@ a {
 
   .admin-heading h3 {
     margin: 0;
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
 
   .create-form-actions {
@@ -1658,13 +1728,13 @@ a {
 
   .list-controls h2 {
     margin: 0 0 5px;
-    font-size: 16px;
+    font-size: 1rem;
   }
 
   .list-controls p {
     margin: 0;
     color: #7b8298;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .tenant-filters {
@@ -1694,7 +1764,7 @@ a {
     padding: 12px 14px;
     background: #fafbfc;
     color: #747b93;
-    font-size: 9px;
+    font-size: 0.5625rem;
     font-weight: 700;
     text-align: left;
     text-transform: uppercase;
@@ -1710,7 +1780,7 @@ a {
     padding: 15px 14px;
     border-top: 1px solid #f0f1f5;
     color: #41475f;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .tenant-table tbody tr:hover {
@@ -1725,7 +1795,7 @@ a {
     background: #faf9ff;
     color: #5948d2;
     cursor: pointer;
-    font-size: 10px;
+    font-size: 0.625rem;
     font-weight: 600;
   }
 
@@ -1750,13 +1820,13 @@ a {
 
   .tenant-table td:first-child strong {
     color: #2f3349;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .tenant-slug {
     margin-top: 4px;
     color: #858ba0;
-    font-size: 10px;
+    font-size: 0.625rem;
   }
 
   .status-badge,
@@ -1766,7 +1836,7 @@ a {
     border-radius: 20px;
     background: #f0f1f5;
     color: #626981;
-    font-size: 9px;
+    font-size: 0.5625rem;
     font-weight: 600;
   }
 
@@ -1810,19 +1880,19 @@ a {
 
   .empty-tenants h3 {
     margin: 0 0 7px;
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
 
   .empty-tenants p {
     margin: 0 0 17px;
     color: #777e96;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .platform-footer {
     padding: 12px 0 0;
     color: #898fa2;
-    font-size: 10px;
+    font-size: 0.625rem;
     text-align: center;
   }
 
@@ -1843,13 +1913,13 @@ a {
 
   .platform-state h2 {
     margin: 9px 0;
-    font-size: 21px;
+    font-size: 1.3125rem;
   }
 
   .platform-state > p {
     margin: 0 0 18px;
     color: #727990;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.55;
   }
 
@@ -1906,7 +1976,7 @@ a {
 
   .mfa-code-form input {
     text-align: center;
-    font-size: 17px;
+    font-size: 1.0625rem;
     letter-spacing: 0.28em;
   }
 
@@ -1953,7 +2023,7 @@ a {
     }
 
     .platform-brand {
-      font-size: 26px;
+      font-size: 1.625rem;
     }
 
     .platform-header-copy {
@@ -1961,11 +2031,11 @@ a {
     }
 
     .platform-header-copy span {
-      font-size: 8px;
+      font-size: 0.5rem;
     }
 
     .platform-header-copy h1 {
-      font-size: 15px;
+      font-size: 0.9375rem;
     }
 
     .platform-toolbar {

@@ -1,0 +1,24 @@
+<dialog
+  #dialog
+  aria-labelledby="confirm-title"
+  aria-describedby="confirm-message"
+  (cancel)="onCancel($event)"
+  (close)="closed.emit()"
+>
+  <h2 id="confirm-title">{{ title() }}</h2>
+  <p id="confirm-message">{{ message() }}</p>
+  <ng-content />
+  <footer>
+    <button type="button" class="cancel" (click)="cancel()" [disabled]="busy()" autofocus>
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="confirm"
+      (click)="confirmed.emit()"
+      [disabled]="busy() || confirmDisabled()"
+    >
+      {{ busy() ? 'Aguarde...' : confirmLabel() }}
+    </button>
+  </footer>
+</dialog>

@@ -59,8 +59,7 @@
             [attr.aria-pressed]="passwordVisible()"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M2.5 12s3.2-6 9.5-6 9.5 6 9.5 6-3.2 6-9.5 6-9.5-6-9.5-6Z" />
-              <circle cx="12" cy="12" r="2.5" />
+              <use href="icons/eye.svg#eye" />
             </svg>
           </button>
         </div>
@@ -75,7 +74,7 @@
 
       <button class="submit-button" type="submit" [disabled]="isSubmitting()">
         <span>{{ isSubmitting() ? 'Entrando...' : 'Entrar' }}</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/arrow-right.svg#arrow-right" /></svg>
       </button>
 
       @if (feedback()) {
@@ -85,8 +84,7 @@
 
     <aside class="invite-notice">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="6" y="10" width="12" height="10" rx="1" />
-        <path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3" />
+        <use href="icons/lock.svg#lock" />
       </svg>
       <div>
         <h3>Acesso somente por convite</h3>

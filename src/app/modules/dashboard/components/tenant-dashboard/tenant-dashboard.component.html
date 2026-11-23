@@ -1,157 +1,4 @@
-<div class="tenant-dashboard" [class.dark-theme]="isDarkTheme()">
-  <aside class="tenant-sidebar">
-    <a class="tenant-brand" routerLink="/select-church" aria-label="IBG Gestão">ibg</a>
-    <div class="tenant-brand-caption">GESTÃO DA IGREJA</div>
-
-    @if (membership(); as church) {
-      <a class="church-switcher" routerLink="/select-church">
-        <span class="church-avatar" aria-hidden="true">{{ church.name.charAt(0) }}</span>
-        <span class="church-copy">
-          <strong>{{ church.name }}</strong>
-          <span>{{ church.slug }}</span>
-        </span>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-      </a>
-    }
-
-    <nav class="tenant-navigation" aria-label="Navegação da igreja">
-      <span class="navigation-label">PRINCIPAL</span>
-      <a class="navigation-item active" aria-current="page" routerLink="./">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4" y="4" width="6" height="6" rx="1" />
-          <rect x="14" y="4" width="6" height="6" rx="1" />
-          <rect x="4" y="14" width="6" height="6" rx="1" />
-          <rect x="14" y="14" width="6" height="6" rx="1" />
-        </svg>
-        Visão geral
-      </a>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="9" cy="8" r="3" />
-          <path
-            d="M3.5 19v-1a5.5 5.5 0 0 1 11 0v1Zm12-7a3 3 0 1 0-1.6-5.5M18 14a4 4 0 0 1 2.5 3.7V19h-3"
-          />
-        </svg>
-        Membros
-      </button>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5m-6 6 6-6 6 6" />
-        </svg>
-        Contribuições
-      </button>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 5v14m-6-6 6 6 6-6" />
-        </svg>
-        Despesas
-      </button>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-2" />
-          <path d="M3 7a2 2 0 0 0 2 2h15v6h-5a3 3 0 0 1 0-6" />
-          <circle cx="15" cy="12" r=".5" />
-        </svg>
-        Contas a pagar
-      </button>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4" y="5" width="16" height="16" rx="2" />
-          <path d="M8 3v4m8-4v4M4 10h16M8 14h3m-3 3h7" />
-        </svg>
-        Fechamento mensal
-      </button>
-
-      <span class="navigation-label administration-label">ADMINISTRAÇÃO</span>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="9" cy="8" r="3" />
-          <path
-            d="M3.5 19v-1a5.5 5.5 0 0 1 11 0v1Zm12-7a3 3 0 1 0-1.6-5.5M18 14a4 4 0 0 1 2.5 3.7V19h-3"
-          />
-        </svg>
-        Usuários e convites
-      </button>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6Zm-3 9 2 2 4-4" />
-        </svg>
-        Auditoria
-      </button>
-      <button class="navigation-item" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
-          <circle cx="12" cy="12" r="6" />
-        </svg>
-        Configurações
-      </button>
-    </nav>
-
-    <div class="sidebar-bottom">
-      <div class="help-card">
-        <span class="help-icon" aria-hidden="true">?</span>
-        <strong>Precisa de ajuda?</strong>
-        <span>Acesse a central de ajuda</span>
-      </div>
-      <div class="secure-note">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6Zm-3 9 2 2 4-4" />
-        </svg>
-        Ambiente seguro
-      </div>
-    </div>
-  </aside>
-
-  <main class="tenant-main">
-    <header class="tenant-topbar">
-      <div class="tenant-breadcrumb">Minha igreja <span>/</span> Visão geral</div>
-      <div class="tenant-user">
-        <button class="notification-button" type="button" disabled aria-label="Notificações">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7m-8 10h4" />
-          </svg>
-        </button>
-        <button
-          class="theme-toggle"
-          type="button"
-          [attr.aria-label]="isDarkTheme() ? 'Ativar tema claro' : 'Ativar tema escuro'"
-          [attr.aria-pressed]="isDarkTheme()"
-          (click)="toggleTheme()"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            @if (isDarkTheme()) {
-              <circle cx="12" cy="12" r="4" />
-              <path
-                d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
-              />
-            } @else {
-              <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z" />
-            }
-          </svg>
-        </button>
-        @if (themeFeedback()) {
-          <span class="theme-feedback" role="status">{{ themeFeedback() }}</span>
-        }
-        <span class="user-avatar" aria-hidden="true">{{ displayName().charAt(0) }}</span>
-        <div class="tenant-user-info">
-          <strong>{{ displayName() }}</strong>
-          @if (membership()?.roles.includes('TENANT_ADMIN')) {
-            <span>Administrador da igreja</span>
-          }
-        </div>
-        <button type="button" (click)="signOut()">Sair</button>
-      </div>
-    </header>
-
-    @if (view() === 'denied') {
-      <section class="dashboard-state" role="alert">
-        <h1>Acesso não disponível</h1>
-        <p>Esta área é exclusiva para administradores ativos da igreja.</p>
-        <a routerLink="/select-church">Voltar para seleção de igreja</a>
-      </section>
-    } @else {
-      <div class="dashboard-content">
+<div class="dashboard-content">
         <header class="dashboard-heading">
           <div>
             <h1>Visão geral</h1>
@@ -162,8 +9,7 @@
           @if (summary(); as data) {
             <button class="period-label" type="button" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="4" y="5" width="16" height="15" rx="2" />
-                <path d="M8 3v4m8-4v4M4 10h16" />
+                <use href="icons/calendar.svg#calendar" />
               </svg>
               {{ formatMonth(data.period) }}
             </button>
@@ -202,7 +48,7 @@
             <span class="card-label">
               Entradas do mês
               <svg class="card-icon card-icon-income" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 17 17 7M8 7h9v9" />
+                <use href="icons/trend-up.svg#trend-up" />
               </svg>
             </span>
             <strong>
@@ -224,7 +70,7 @@
             <span class="card-label">
               Saídas do mês
               <svg class="card-icon card-icon-expense" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m7 7 10 10M8 17h9V8" />
+                <use href="icons/trend-down.svg#trend-down" />
               </svg>
             </span>
             <strong>
@@ -246,7 +92,7 @@
             <span class="card-label">
               Saldo do mês
               <svg class="card-icon card-icon-balance" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 17 17 7M8 7h9v9" />
+                <use href="icons/trend-up.svg#trend-up" />
               </svg>
             </span>
             @if (summary(); as data) {
@@ -261,8 +107,7 @@
             <span class="card-label">
               Saldo acumulado
               <svg class="card-icon card-icon-balance" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8" />
-                <path d="M12 11v5m0-8h.01" />
+                <use href="icons/info.svg#info" />
               </svg>
             </span>
             @if (summary(); as data) {
@@ -374,7 +219,7 @@
               <div class="chart-empty">
                 <span class="empty-chart-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="M4 19V5m0 14h16M8 15l4-4 3 2 5-6" />
+                    <use href="icons/chart.svg#chart" />
                   </svg>
                 </span>
                 <strong>Os dados do painel aparecerão aqui</strong>
@@ -421,7 +266,7 @@
             <button type="button" disabled>
               Ver todas as contas
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14m-5-5 5 5-5 5" />
+                <use href="icons/arrow-right-short.svg#arrow-right-short" />
               </svg>
             </button>
           </section>
@@ -455,17 +300,16 @@
 
           <section class="side-card action-card">
             <h2>O que você precisa fazer?</h2>
-            <button class="primary-dashboard-action" type="button" disabled>
-              <span>+</span> Nova contribuição
-            </button>
+            <a class="primary-dashboard-action" [routerLink]="['/tenant', tenantSlug, 'contributions']" [queryParams]="{ new: '1' }">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/plus.svg#plus" /></svg>
+              Nova contribuição
+            </a>
             <button class="secondary-dashboard-action" type="button" disabled>
-              Consultar fechamento mensal <span aria-hidden="true">→</span>
+              Consultar fechamento mensal
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/arrow-right.svg#arrow-right" /></svg>
             </button>
           </section>
         </div>
 
         <footer class="tenant-footer">IBG Gestão <span>·</span> {{ membership()?.name }}</footer>
       </div>
-    }
-  </main>
-</div>

@@ -1,0 +1,474 @@
+<div class="contributions-content">
+  <header class="contributions-heading">
+    <div>
+      <h1>Contribuições</h1>
+      <p>Acompanhe e registre as entradas da sua igreja.</p>
+    </div>
+  </header>
+
+  <div class="d-flex justify-content-end">
+    <button
+      type="button"
+      class="contributions-button secondary report-button me-2"
+      (click)="generateReport(dateRange)"
+      [disabled]="reportLoading()"
+      aria-describedby="report-description"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <use href="icons/pdf.svg#pdf" />
+      </svg>
+      {{ reportLoading() ? 'Gerando relatório...' : 'Gerar relatório' }}
+    </button>
+    <button
+      type="button"
+      class="contributions-button primary new-contribution-button"
+      (click)="openDialog()"
+      [disabled]="catalogLoading() || !!catalogError() || !types().length || !methods().length"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/plus.svg#plus" /></svg>
+      Nova contribuição
+    </button>
+  </div>
+
+  @if (reportError()) {
+    <p class="contributions-feedback" role="alert">{{ reportError() }}</p>
+  }
+  @if (notice()) {
+    <p class="contributions-notice" role="status">{{ notice() }}</p>
+  }
+  @if (catalogError()) {
+    <div class="contributions-feedback" role="alert">
+      {{ catalogError() }}
+      <button type="button" (click)="loadCatalogs()">Tentar novamente</button>
+    </div>
+  } @else if (!catalogLoading() && (!types().length || !methods().length)) {
+    <p class="contributions-feedback" role="status">
+      Cadastre tipos de contribuição e meios de pagamento ativos antes de registrar uma
+      contribuição.
+    </p>
+  }
+
+  <div class="contributions-totals">
+    <div>
+      <span>TOTAL DO FILTRO</span>
+      <strong>{{ list() ? formatCurrency(list()!.meta.totals.amount) : '—' }}</strong>
+    </div>
+    <div>
+      <strong>{{ list()?.meta?.totals?.count ?? '—' }}</strong>
+      <span>contribuições</span>
+    </div>
+    <p>Os totais consideram todos os resultados, não apenas esta página.</p>
+  </div>
+
+  <section class="contributions-list" aria-label="Lista de contribuições">
+    <form class="contributions-filters" [formGroup]="filters" (ngSubmit)="applyFilters(dateRange)">
+      <label>
+        <span>Buscar membro</span>
+        <input type="search" formControlName="q" maxlength="120" placeholder="Buscar membro" />
+      </label>
+      <label>
+        <span>Tipo de contribuição</span>
+        <select formControlName="typeId">
+          <option value="">Todos os tipos</option>
+          @for (type of types(); track type.id) {
+            <option [value]="type.id">{{ type.description }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Meio de pagamento</span>
+        <select formControlName="methodId">
+          <option value="">Todos os meios</option>
+          @for (method of methods(); track method.id) {
+            <option [value]="method.id">{{ method.description }}</option>
+          }
+        </select>
+      </label>
+      <div class="date-range-field">
+        <span id="contributions-period-label">Período</span>
+        <details
+          #dateRange
+          class="date-range"
+          (toggle)="syncCalendarMonth(dateRange)"
+          (keydown.escape)="closeDateRange(dateRange)"
+        >
+          <summary aria-labelledby="contributions-period-label contributions-period-value">
+            <span id="contributions-period-value">{{ dateRangeLabel() }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <use href="icons/chevron-down.svg#chevron-down" />
+            </svg>
+          </summary>
+          <div class="date-range-popover">
+            <div class="range-calendars">
+              <section class="range-calendar" [attr.aria-label]="calendarMonthLabel(0)">
+                <header>
+                  <button
+                    type="button"
+                    class="calendar-navigation"
+                    aria-label="Mês anterior"
+                    (click)="changeCalendarMonth(-1)"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-left.svg#chevron-left" /></svg>
+                  </button>
+                  <strong>{{ calendarMonthLabel(0) }}</strong>
+                  <span aria-hidden="true"></span>
+                </header>
+                <div class="calendar-grid calendar-weekdays" aria-hidden="true">
+                  <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span
+                  ><span>S</span><span>S</span>
+                </div>
+                <div class="calendar-grid">
+                  @for (day of calendarDays(0); track $index) {
+                    @if (day; as calendarDay) {
+                      <button
+                        type="button"
+                        class="calendar-day"
+                        [class.in-range]="isDateInRange(calendarDay.date)"
+                        [class.selected]="isSelectedDate(calendarDay.date)"
+                        [attr.aria-label]="formatDate(calendarDay.date)"
+                        [attr.aria-pressed]="isSelectedDate(calendarDay.date)"
+                        (click)="selectCalendarDate(calendarDay.date)"
+                      >
+                        {{ calendarDay.day }}
+                      </button>
+                    } @else {
+                      <span class="calendar-day empty" aria-hidden="true"></span>
+                    }
+                  }
+                </div>
+              </section>
+              <section class="range-calendar" [attr.aria-label]="calendarMonthLabel(1)">
+                <header>
+                  <span aria-hidden="true"></span>
+                  <strong>{{ calendarMonthLabel(1) }}</strong>
+                  <button
+                    type="button"
+                    class="calendar-navigation"
+                    aria-label="Próximo mês"
+                    (click)="changeCalendarMonth(1)"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+                  </button>
+                </header>
+                <div class="calendar-grid calendar-weekdays" aria-hidden="true">
+                  <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span
+                  ><span>S</span><span>S</span>
+                </div>
+                <div class="calendar-grid">
+                  @for (day of calendarDays(1); track $index) {
+                    @if (day; as calendarDay) {
+                      <button
+                        type="button"
+                        class="calendar-day"
+                        [class.in-range]="isDateInRange(calendarDay.date)"
+                        [class.selected]="isSelectedDate(calendarDay.date)"
+                        [attr.aria-label]="formatDate(calendarDay.date)"
+                        [attr.aria-pressed]="isSelectedDate(calendarDay.date)"
+                        (click)="selectCalendarDate(calendarDay.date)"
+                      >
+                        {{ calendarDay.day }}
+                      </button>
+                    } @else {
+                      <span class="calendar-day empty" aria-hidden="true"></span>
+                    }
+                  }
+                </div>
+              </section>
+            </div>
+            <div class="date-range-inputs">
+              <label>
+                <span>Data inicial</span>
+                <input type="date" formControlName="from" (input)="reportError.set('')" />
+              </label>
+              <label>
+                <span>Data final</span>
+                <input type="date" formControlName="to" (input)="reportError.set('')" />
+              </label>
+            </div>
+            <footer>
+              <button
+                type="button"
+                class="contributions-button secondary"
+                (click)="closeDateRange(dateRange)"
+              >
+                Concluir
+              </button>
+            </footer>
+          </div>
+        </details>
+      </div>
+      <button type="submit" class="contributions-button primary">Filtrar</button>
+      <button type="button" class="contributions-button text" (click)="clearFilters(dateRange)">
+        Limpar filtros
+      </button>
+    </form>
+
+    @if (filterError()) {
+      <p class="contributions-feedback" role="alert">{{ filterError() }}</p>
+    }
+    @if (listError()) {
+      <div class="contributions-feedback" role="alert">
+        {{ listError() }}
+        <button type="button" (click)="loadList(pendingPage)">Tentar novamente</button>
+      </div>
+    }
+    @if (listLoading()) {
+      <p class="contributions-state" role="status">Carregando contribuições...</p>
+    } @else if (list(); as result) {
+      <h2>Contribuições ativas</h2>
+      @if (result.data.length) {
+        <div class="contributions-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Membro</th>
+                <th>Tipo</th>
+                <th>Meio</th>
+                <th>Anexos</th>
+                <th>Valor</th>
+                <th class="table-actions">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of result.data; track item.id) {
+                <tr [class.voided]="item.status === 'VOIDED'">
+                  <td>{{ formatDate(item.occurredOn) }}</td>
+                  <td>
+                    {{ item.member?.name ?? 'Não informado' }}
+                    @if (item.status === 'VOIDED') {
+                      <span class="voided-label">Cancelada</span>
+                    }
+                  </td>
+                  <td>{{ item.type.description }}</td>
+                  <td>
+                    <span class="method-badge">{{ item.method.description }}</span>
+                  </td>
+                  <td>{{ item.attachmentsCount }}</td>
+                  <td class="contribution-amount">{{ formatCurrency(item.amount) }}</td>
+                  <td class="table-actions contribution-row-actions">
+                    @if (item.status === 'ACTIVE') {
+                      <button
+                        type="button"
+                        (click)="openDialog(item)"
+                        [disabled]="
+                          catalogLoading() ||
+                          !!catalogError() ||
+                          !types().length ||
+                          !methods().length
+                        "
+                        [attr.aria-label]="
+                          'Editar contribuição de ' +
+                          (item.member?.name ?? 'membro não informado') +
+                          ', ' +
+                          formatDate(item.occurredOn)
+                        "
+                        title="Editar contribuição"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <use href="icons/edit.svg#edit" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="delete"
+                        (click)="openDelete(item)"
+                        [attr.aria-label]="
+                          'Excluir contribuição de ' +
+                          (item.member?.name ?? 'membro não informado') +
+                          ', ' +
+                          formatDate(item.occurredOn)
+                        "
+                        title="Excluir contribuição"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <use href="icons/delete.svg#delete" />
+                        </svg>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="contributions-state">
+          Nenhuma contribuição encontrada para os filtros selecionados.
+        </p>
+      }
+      <div class="contributions-pagination">
+        <span>{{ result.meta.total }} contribuições encontradas</span>
+        <div>
+          <button
+            type="button"
+            (click)="loadList(result.meta.page - 1)"
+            [disabled]="result.meta.page <= 1"
+            aria-label="Página anterior"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-left.svg#chevron-left" /></svg>
+          </button>
+          <span>Página {{ result.meta.page }} de {{ pages() }}</span>
+          <button
+            type="button"
+            (click)="loadList(result.meta.page + 1)"
+            [disabled]="result.meta.page >= pages()"
+            aria-label="Próxima página"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+</div>
+
+<dialog
+  #contributionDialog
+  class="contribution-dialog"
+  aria-labelledby="new-contribution-title"
+  (cancel)="preventCloseWhileSaving($event)"
+  (close)="onMutationDialogClosed()"
+>
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <header>
+      <div>
+        <h2 id="new-contribution-title">
+          {{ editing() ? 'Editar contribuição' : 'Nova contribuição' }}
+        </h2>
+        <p>
+          {{
+            editing()
+              ? 'Atualize os dados da contribuição.'
+              : 'Registre uma entrada com todos os detalhes.'
+          }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="dialog-close"
+        aria-label="Fechar"
+        (click)="closeDialog()"
+        [disabled]="saving()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/close.svg#close" /></svg>
+      </button>
+    </header>
+    <fieldset class="contribution-form-grid" [disabled]="saving()">
+      <label>
+        <span>Tipo de contribuição *</span>
+        <select formControlName="contributionTypeId">
+          <option value="">Selecione</option>
+          @if (editing(); as item) {
+            @if (!typeAvailable(item.type.id)) {
+              <option [value]="item.type.id" disabled>{{ item.type.description }} (inativo)</option>
+            }
+          }
+          @for (type of types(); track type.id) {
+            <option [value]="type.id">{{ type.description }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Data do lançamento *</span>
+        <input type="date" formControlName="occurredOn" />
+      </label>
+      <div class="full-width member-field">
+        <label>
+          <span>Membro {{ requiresMember() ? '*' : '(opcional)' }}</span>
+          <input
+            #memberSearch
+            type="search"
+            formControlName="memberSearch"
+            maxlength="120"
+            placeholder="Buscar membro"
+            (input)="searchMembers(memberSearch.value)"
+            autocomplete="off"
+          />
+        </label>
+        @if (memberLoading()) {
+          <small>Buscando membros...</small>
+        }
+        @if (memberError()) {
+          <small role="alert">{{ memberError() }}</small>
+        }
+        @if (members().length) {
+          <span class="member-results">
+            @for (member of members(); track member.id) {
+              <button type="button" (click)="selectMember(member)">
+                {{ member.name }} <small>{{ member.memberType.description }}</small>
+              </button>
+            }
+          </span>
+        } @else if (
+          form.controls.memberSearch.value &&
+          !selectedMember() &&
+          !memberLoading() &&
+          !memberError()
+        ) {
+          <small>Nenhum membro encontrado.</small>
+        }
+      </div>
+      <label>
+        <span>Valor (R$) *</span>
+        <app-currency-input formControlName="amount" [required]="true" />
+      </label>
+      <label>
+        <span>Meio de pagamento *</span>
+        <select formControlName="paymentMethodId">
+          <option value="">Selecione</option>
+          @if (editing(); as item) {
+            @if (!methodAvailable(item.method.id)) {
+              <option [value]="item.method.id" disabled>
+                {{ item.method.description }} (inativo)
+              </option>
+            }
+          }
+          @for (method of methods(); track method.id) {
+            <option [value]="method.id">{{ method.description }}</option>
+          }
+        </select>
+      </label>
+      <label class="full-width">
+        <span>Observação (opcional)</span>
+        <input type="text" formControlName="observation" maxlength="2000" />
+      </label>
+    </fieldset>
+    @if (formError()) {
+      <p class="contributions-feedback" role="alert">{{ formError() }}</p>
+    }
+    <footer>
+      <button
+        type="button"
+        class="contributions-button secondary"
+        (click)="closeDialog()"
+        [disabled]="saving()"
+      >
+        Cancelar
+      </button>
+      <button type="submit" class="contributions-button primary" [disabled]="saving() || stale()">
+        {{ saving() ? 'Salvando...' : 'Salvar contribuição' }}
+      </button>
+    </footer>
+  </form>
+</dialog>
+
+<app-custom-confirm
+  title="Excluir contribuição?"
+  message="A contribuição será anulada e deixará de aparecer entre as contribuições ativas."
+  confirmLabel="Excluir contribuição"
+  [busy]="deletingBusy()"
+  [confirmDisabled]="stale()"
+  (confirmed)="deleteContribution()"
+  (closed)="onMutationDialogClosed()"
+>
+  <fieldset class="void-reason-fields" [disabled]="deletingBusy()">
+    <label class="void-reason">
+      <span>Motivo da anulação (opcional)</span>
+      <textarea [formControl]="voidReason" maxlength="2000" rows="3"></textarea>
+    </label>
+  </fieldset>
+  @if (deleteError()) {
+    <p class="contributions-feedback" role="alert">{{ deleteError() }}</p>
+  }
+</app-custom-confirm>

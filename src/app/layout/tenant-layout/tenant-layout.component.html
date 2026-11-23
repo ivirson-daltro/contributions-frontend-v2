@@ -1,0 +1,154 @@
+<div class="tenant-dashboard" [class.dark-theme]="isDarkTheme()">
+  <aside class="tenant-sidebar">
+    <a class="tenant-brand" routerLink="/select-church" aria-label="IBG Gestão">ibg</a>
+    <div class="tenant-brand-caption">GESTÃO DA IGREJA</div>
+
+    @if (tenant()?.membership; as church) {
+      <a class="church-switcher" routerLink="/select-church">
+        <span class="church-avatar" aria-hidden="true">{{ church.name.charAt(0) }}</span>
+        <span class="church-copy">
+          <strong>{{ church.name }}</strong>
+          <span>{{ church.slug }}</span>
+        </span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+      </a>
+    }
+
+    <nav class="tenant-navigation" aria-label="Navegação da igreja">
+      <span class="navigation-label">PRINCIPAL</span>
+      <a class="navigation-item" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }" [routerLink]="['/tenant', tenantSlug]">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/dashboard.svg#dashboard" />
+        </svg>
+        Visão geral
+      </a>
+      <button class="navigation-item" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/users.svg#users" />
+        </svg>
+        Membros
+      </button>
+      <a class="navigation-item" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }" [routerLink]="['/tenant', tenantSlug, 'contributions']">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/arrow-up.svg#arrow-up" />
+        </svg>
+        Contribuições
+      </a>
+      <button class="navigation-item" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/arrow-down.svg#arrow-down" />
+        </svg>
+        Despesas
+      </button>
+      <button class="navigation-item" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/wallet.svg#wallet" />
+        </svg>
+        Contas a pagar
+      </button>
+      <button class="navigation-item" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/calendar-details.svg#calendar-details" />
+        </svg>
+        Fechamento mensal
+      </button>
+
+      <span class="navigation-label administration-label">ADMINISTRAÇÃO</span>
+      <button class="navigation-item" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/users.svg#users" />
+        </svg>
+        Usuários e convites
+      </button>
+      <button class="navigation-item" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/shield-check.svg#shield-check" />
+        </svg>
+        Auditoria
+      </button>
+      <button class="navigation-item" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/settings.svg#settings" />
+        </svg>
+        Configurações
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="help-card">
+        <span class="help-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><use href="icons/help.svg#help" /></svg>
+        </span>
+        <strong>Precisa de ajuda?</strong>
+        <span>Acesse a central de ajuda</span>
+      </div>
+      <div class="secure-note">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="icons/shield-check.svg#shield-check" />
+        </svg>
+        Ambiente seguro
+      </div>
+    </div>
+  </aside>
+
+  <main class="tenant-main">
+    <header class="tenant-topbar">
+      <div class="tenant-breadcrumb">Minha igreja <span>/</span> {{ route.firstChild?.snapshot?.data?.['breadcrumb'] }}</div>
+      <div class="tenant-user">
+        <button class="notification-button" type="button" disabled aria-label="Notificações">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <use href="icons/bell.svg#bell" />
+          </svg>
+        </button>
+        <button
+          class="theme-toggle"
+          type="button"
+          [attr.aria-label]="isDarkTheme() ? 'Ativar tema claro' : 'Ativar tema escuro'"
+          [attr.aria-pressed]="isDarkTheme()"
+          (click)="toggleTheme()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            @if (isDarkTheme()) {
+              <use href="icons/sun.svg#sun" />
+            } @else {
+              <use href="icons/moon.svg#moon" />
+            }
+          </svg>
+        </button>
+        @if (themeFeedback()) {
+          <span class="theme-feedback" role="status">{{ themeFeedback() }}</span>
+        }
+        <span class="user-avatar" aria-hidden="true">{{ displayName().charAt(0) }}</span>
+        <div class="tenant-user-info">
+          <strong>{{ displayName() }}</strong>
+          @if (tenant()?.membership?.roles?.includes('TENANT_ADMIN')) {
+            <span>Administrador da igreja</span>
+          }
+        </div>
+        <button type="button" (click)="signOut()">Sair</button>
+      </div>
+    </header>
+
+    @if (feedback() && view() !== 'error') {
+      <p class="dashboard-feedback" role="alert">{{ feedback() }}</p>
+    }
+
+    @if (view() === 'denied') {
+      <section class="dashboard-state" role="alert">
+        <h1>Acesso não disponível</h1>
+        <p>Esta área é exclusiva para administradores ativos da igreja.</p>
+        <a routerLink="/select-church">Voltar para seleção de igreja</a>
+      </section>
+    } @else if (view() === 'error') {
+      <section class="dashboard-state" role="alert">
+        <h1>Não foi possível acessar a igreja</h1>
+        <p>{{ feedback() }}</p>
+        <button type="button" (click)="retryAccess()">Tentar novamente</button>
+      </section>
+    } @else if (view() === 'ready') {
+      <router-outlet />
+    } @else {
+      <p class="dashboard-loading" role="status">Validando acesso...</p>
+    }
+  </main>
+</div>

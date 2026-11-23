@@ -10,7 +10,9 @@
       </div>
     } @else if (view() === 'error') {
       <div class="invite-state" role="alert">
-        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <span class="invite-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><use href="icons/alert.svg#alert" /></svg>
+        </span>
         <h1 id="two-factor-title">Não foi possível continuar</h1>
         <p>{{ feedback() }}</p>
         <button class="invite-retry-button" type="button" (click)="loadStatus()">
@@ -65,8 +67,7 @@
       } @else {
         <aside class="two-factor-security-note">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m12 3 7 3v5c0 4.6-2.8 8-7 10-4.2-2-7-5.4-7-10V6l7-3Z" />
-            <path d="m9 12 2 2 4-4" />
+            <use href="icons/security.svg#security" />
           </svg>
           <div>
             <strong>Uma camada extra de segurança</strong>

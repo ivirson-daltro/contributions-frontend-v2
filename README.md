@@ -83,5 +83,20 @@ storage; it remains in the link and is sent only to the invitation API.
 Shared authentication infrastructure lives in `src/app/core/auth`, while the
 authentication layout lives in `src/app/layout`. Feature code is organized by
 domain under `src/app/modules`: `auth`, `memberships`, `dashboard`, and
-`platform`. Each feature keeps components, services, and DTOs in separate
+`platform`, as well as `contributions`. Each feature keeps components, services, and DTOs in separate
 directories; tests stay alongside the files they cover.
+
+The tenant contribution page lists and filters records, creates and edits contributions,
+and confirms logical deletion (annulment) with an optional reason. Edits and deletions
+use optimistic concurrency; when a record is stale, closing the dialog refreshes the list.
+It also downloads a PDF report for a selected period of up to 366 inclusive days.
+The report includes all active contributions in that period, regardless of the
+other list filters. Attachment uploads remain unavailable.
+
+The tenant layout validates access and hosts lazy-loaded child routes for the
+overview (`/tenant/:slug`) and contributions (`/tenant/:slug/contributions`).
+The overview's new-contribution shortcut adds `?new=1` to open the form after
+the contribution catalogs load.
+
+The shared currency input formats typed digits as Brazilian currency and uses
+an ungrouped decimal string (for example, `200.55`) as its form value.

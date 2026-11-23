@@ -1,4 +1,4 @@
-app-tenant-dashboard {
+app-tenant-layout {
   display: block;
   min-height: 100vh;
   min-height: 100svh;
@@ -28,7 +28,7 @@ app-tenant-dashboard {
 .tenant-brand {
   width: fit-content;
   color: #5e4bdc;
-  font-size: 30px;
+  font-size: 1.875rem;
   font-weight: 750;
   letter-spacing: -1.5px;
   line-height: 1;
@@ -38,7 +38,7 @@ app-tenant-dashboard {
 .tenant-brand-caption {
   margin: 5px 0 28px;
   color: #8d93a3;
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 0.06em;
 }
 
@@ -64,7 +64,7 @@ app-tenant-dashboard {
   border-radius: 50%;
   background: #f0edff;
   color: #6251df;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 650;
   text-transform: uppercase;
 }
@@ -84,13 +84,13 @@ app-tenant-dashboard {
 }
 
 .church-copy strong {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
 }
 
 .church-copy span {
   color: #9297a7;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .church-switcher > svg {
@@ -113,7 +113,7 @@ app-tenant-dashboard {
 .navigation-label {
   padding: 0 10px;
   color: #9297a7;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 650;
   letter-spacing: 0.07em;
 }
@@ -129,7 +129,7 @@ app-tenant-dashboard {
   background: transparent;
   color: #6e7488;
   font: inherit;
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-align: left;
   text-decoration: none;
 }
@@ -198,17 +198,34 @@ app-tenant-dashboard {
   border: 1px solid #6251df;
   border-radius: 50%;
   color: #6251df;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
+.help-icon svg,
+.action-card svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.help-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
 .help-card strong {
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .help-card > span:last-child {
   color: #8d93a3;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .secure-note {
@@ -218,7 +235,7 @@ app-tenant-dashboard {
   padding: 13px 4px 0;
   border-top: 1px solid #e5e8ef;
   color: #747a8e;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .secure-note svg {
@@ -251,7 +268,7 @@ app-tenant-dashboard {
   min-width: 0;
   overflow: hidden;
   color: #747a8e;
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -267,7 +284,7 @@ app-tenant-dashboard {
   align-items: center;
   gap: 10px;
   color: #42485f;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .tenant-user-info {
@@ -291,7 +308,7 @@ app-tenant-dashboard {
 
 .tenant-user-info span {
   color: #8a90a0;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .notification-button svg {
@@ -319,7 +336,7 @@ app-tenant-dashboard {
   height: 30px;
   background: #efedff;
   color: #6251df;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .tenant-user > button:last-child {
@@ -344,7 +361,7 @@ app-tenant-dashboard {
   color: #555b70;
   cursor: pointer;
   font: inherit;
-  font-size: 10px;
+  font-size: 0.625rem;
   white-space: nowrap;
 }
 
@@ -360,16 +377,18 @@ app-tenant-dashboard {
 
 .theme-feedback {
   color: #80501b;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .tenant-user button:focus-visible,
 .theme-toggle:focus-visible,
 .dashboard-feedback button:focus-visible,
 .dashboard-status-actions button:focus-visible,
+.action-card a:focus-visible,
 .church-switcher:focus-visible,
 .navigation-item:focus-visible,
-.dashboard-state a:focus-visible {
+.dashboard-state a:focus-visible,
+.dashboard-state button:focus-visible {
   outline: 3px solid #a99eff;
   outline-offset: 3px;
 }
@@ -392,7 +411,7 @@ app-tenant-dashboard {
 .dashboard-eyebrow {
   margin: 0 0 8px;
   color: #6654dc;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -401,7 +420,7 @@ app-tenant-dashboard {
   max-width: 660px;
   margin: 0;
   color: #25283d;
-  font-size: 25px;
+  font-size: 1.5625rem;
   font-weight: 650;
   letter-spacing: -0.035em;
   line-height: 1.25;
@@ -410,7 +429,7 @@ app-tenant-dashboard {
 .dashboard-subtitle {
   margin: 8px 0 0;
   color: #747a8e;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .period-label {
@@ -422,7 +441,7 @@ app-tenant-dashboard {
   border-radius: 7px;
   background: #fff;
   color: #676d82;
-  font-size: 10px;
+  font-size: 0.625rem;
   white-space: nowrap;
 }
 
@@ -443,7 +462,7 @@ app-tenant-dashboard {
   gap: 12px;
   margin-top: -3px;
   color: #8a90a0;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .dashboard-status-info,
@@ -484,7 +503,7 @@ app-tenant-dashboard {
   border-radius: 8px;
   background: #fff8eb;
   color: #80501b;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.45;
 }
 
@@ -507,7 +526,7 @@ app-tenant-dashboard {
   gap: 9px;
   margin: 0;
   color: #747a8e;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .loading-indicator {
@@ -551,7 +570,7 @@ app-tenant-dashboard {
   align-items: center;
   justify-content: space-between;
   color: #747a8e;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .card-icon {
@@ -579,14 +598,14 @@ app-tenant-dashboard {
 
 .overview-card strong {
   color: #25283d;
-  font-size: 21px;
+  font-size: 1.3125rem;
   font-weight: 650;
   letter-spacing: -0.03em;
 }
 
 .card-caption {
   color: #9297a7;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .chart-card {
@@ -606,14 +625,14 @@ app-tenant-dashboard {
 .community-heading h2 {
   margin: 0;
   color: #25283d;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 620;
 }
 
 .card-heading .dashboard-eyebrow,
 .community-heading .dashboard-eyebrow {
   margin-bottom: 6px;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .chart-legend {
@@ -621,7 +640,7 @@ app-tenant-dashboard {
   flex-wrap: wrap;
   gap: 16px;
   color: #747a8e;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .chart-legend span {
@@ -660,7 +679,7 @@ app-tenant-dashboard {
   color: #8a90a0;
   cursor: pointer;
   font: inherit;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .chart-tabs button.active {
@@ -697,7 +716,7 @@ app-tenant-dashboard {
   justify-items: center;
   gap: 8px;
   color: #858a9b;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .chart-y-labels {
@@ -709,7 +728,7 @@ app-tenant-dashboard {
   flex-direction: column;
   justify-content: space-between;
   color: #9ba0af;
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 
 .chart-bars {
@@ -744,7 +763,7 @@ app-tenant-dashboard {
   background: #282b40;
   box-shadow: 0 8px 22px rgb(24 26 42 / 20%);
   color: #fff;
-  font-size: 9px;
+  font-size: 0.5625rem;
   line-height: 1.3;
   opacity: 0;
   pointer-events: none;
@@ -771,7 +790,7 @@ app-tenant-dashboard {
 
 .chart-tooltip strong {
   color: #fff;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 650;
 }
 
@@ -811,7 +830,7 @@ app-tenant-dashboard {
 .chart-period {
   margin: 11px 0 0;
   color: #8d92a1;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .side-card {
@@ -839,7 +858,7 @@ app-tenant-dashboard {
 .due-card h2 {
   margin: 0;
   color: #25283d;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 620;
 }
 
@@ -850,7 +869,7 @@ app-tenant-dashboard {
   gap: 12px;
   margin-top: 15px;
   color: #747a8e;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .due-overdue {
@@ -880,7 +899,7 @@ app-tenant-dashboard {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   color: #30354b;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .due-item > div {
@@ -894,7 +913,7 @@ app-tenant-dashboard {
 
 .due-date {
   color: #747a8e;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .due-date.overdue {
@@ -902,7 +921,7 @@ app-tenant-dashboard {
 }
 
 .due-item strong {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -910,7 +929,7 @@ app-tenant-dashboard {
 .due-details p {
   margin: 10px 0 0;
   color: #747a8e;
-  font-size: 9px;
+  font-size: 0.5625rem;
   line-height: 1.5;
 }
 
@@ -925,7 +944,7 @@ app-tenant-dashboard {
   background: transparent;
   color: #6251df;
   font: inherit;
-  font-size: 10px;
+  font-size: 0.625rem;
   text-align: left;
 }
 
@@ -942,10 +961,11 @@ app-tenant-dashboard {
 .action-card h2 {
   margin: 0 0 14px;
   color: #31364c;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
-.action-card button {
+.action-card button,
+.action-card a {
   display: flex;
   width: 100%;
   min-height: 38px;
@@ -955,7 +975,8 @@ app-tenant-dashboard {
   margin-top: 8px;
   border-radius: 6px;
   font: inherit;
-  font-size: 10px;
+  font-size: 0.625rem;
+  text-decoration: none;
 }
 
 .primary-dashboard-action {
@@ -1004,11 +1025,11 @@ app-tenant-dashboard {
 
 .chart-empty strong {
   color: #383d52;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .chart-empty > span:last-child {
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .tenant-dashboard .community-card {
@@ -1031,7 +1052,7 @@ app-tenant-dashboard {
 
 .community-decoration {
   color: #e8e5fb;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 750;
   letter-spacing: -1.5px;
 }
@@ -1061,7 +1082,7 @@ app-tenant-dashboard {
 .community-metrics strong {
   overflow: hidden;
   color: #25283d;
-  font-size: clamp(17px, 2vw, 24px);
+  font-size: clamp(1.0625rem, 2.125vw, 1.5rem);
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1069,14 +1090,14 @@ app-tenant-dashboard {
 
 .community-metrics span {
   color: #747a8e;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .tenant-footer {
   display: flex;
   gap: 7px;
   color: #888d9d;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .dashboard-state {
@@ -1091,19 +1112,25 @@ app-tenant-dashboard {
 
 .dashboard-state h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 1.5rem;
 }
 
 .dashboard-state p {
   margin: 0;
   color: #747a8e;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
-.dashboard-state a {
+.dashboard-state a,
+.dashboard-state button {
   margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #6251df;
-  font-size: 12px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
   font-weight: 600;
   text-decoration: none;
 }
@@ -1148,7 +1175,7 @@ app-tenant-dashboard {
   .church-switcher,
   .sidebar-bottom,
   .navigation-label,
-  .navigation-item:not(.active) {
+  .navigation-item:disabled {
     display: none;
   }
 
@@ -1198,7 +1225,7 @@ app-tenant-dashboard {
   }
 
   .dashboard-heading h1 {
-    font-size: 22px;
+    font-size: 1.375rem;
   }
 
   .period-label {
@@ -1220,7 +1247,7 @@ app-tenant-dashboard {
   .overview-card strong {
     grid-column: 2;
     grid-row: span 2;
-    font-size: 19px;
+    font-size: 1.1875rem;
   }
 
   .card-caption {
@@ -1277,7 +1304,7 @@ app-tenant-dashboard {
   }
 
   .community-metrics span {
-    font-size: 9px;
+    font-size: 0.5625rem;
   }
 
   .dashboard-feedback {
@@ -1537,6 +1564,7 @@ app-tenant-dashboard {
   color: #c2b8ff;
 }
 
-.dark-theme .dashboard-state a {
+.dark-theme .dashboard-state a,
+.dark-theme .dashboard-state button {
   color: #b6a8ff;
 }

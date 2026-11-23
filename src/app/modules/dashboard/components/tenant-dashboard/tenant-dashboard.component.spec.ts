@@ -1,19 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { AuthService } from '../../../../core/auth/services/auth.service';
+import { TenantContextService } from '../../../../core/tenant/services/tenant-context.service';
 import { TenantDashboardComponent } from './tenant-dashboard.component';
 import { DashboardSeriesResponse } from '../../dtos/dashboard-series-response.dto';
 import { DashboardSummaryResponse } from '../../dtos/dashboard-summary-response.dto';
 import { TenantDashboardService } from '../../services/tenant-dashboard.service';
 
 describe('TenantDashboardComponent', () => {
-  const authService = {
-    getAccessToken: vi.fn(),
-    getCurrentUser: vi.fn(),
-    signOut: vi.fn(),
-  };
+  async function waitForSummary(fixture: ComponentFixture<TenantDashboardComponent>) {
+    await vi.waitFor(() => expect(fixture.componentInstance['summary']()).not.toBeNull());
+    fixture.detectChanges();
+  }
+
   const dashboardService = {
     getSummary: vi.fn(),
     getSeries: vi.fn(),
@@ -91,21 +92,6 @@ describe('TenantDashboardComponent', () => {
   };
 
   beforeEach(async () => {
-    window.localStorage.removeItem('ibg.dashboard.theme');
-    authService.getAccessToken.mockReset().mockResolvedValue('access-token');
-    authService.getCurrentUser.mockReset().mockResolvedValue({
-      user: { id: 'user-id', email: 'admin@example.com', displayName: 'Admin' },
-      memberships: [
-        {
-          tenantId: 'tenant-id',
-          slug: 'igreja-central',
-          name: 'Igreja Central',
-          status: 'ACTIVE',
-          roles: ['TENANT_ADMIN'],
-        },
-      ],
-    });
-    authService.signOut.mockReset().mockResolvedValue(undefined);
     dashboardService.getSummary.mockReset().mockResolvedValue(summary);
     dashboardService.getSeries.mockReset().mockResolvedValue(series);
 
@@ -113,11 +99,15 @@ describe('TenantDashboardComponent', () => {
       imports: [TenantDashboardComponent],
       providers: [
         provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'igreja-central' }) } },
-        },
-        { provide: AuthService, useValue: authService },
+        { provide: TenantContextService, useValue: {
+          current: signal({
+            accessToken: 'access-token',
+            membership: {
+              tenantId: 'tenant-id', slug: 'igreja-central', name: 'Igreja Central',
+              status: 'ACTIVE', roles: ['TENANT_ADMIN'],
+            },
+          }),
+        } },
         { provide: TenantDashboardService, useValue: dashboardService },
       ],
     }).compileComponents();
@@ -142,30 +132,6 @@ describe('TenantDashboardComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.overview-card')).toHaveLength(4);
     expect(text).toContain('Evolução financeira');
     expect(text).toContain('O que você precisa fazer?');
-    const userInfo = (fixture.nativeElement as HTMLElement).querySelector('.tenant-user-info');
-    expect(userInfo?.textContent).toContain('Admin');
-    expect(userInfo?.textContent).toContain('Administrador da igreja');
-  });
-
-  it('should restore, toggle, and persist the dashboard theme preference', async () => {
-    window.localStorage.setItem('ibg.dashboard.theme', 'dark');
-    const fixture = TestBed.createComponent(TenantDashboardComponent);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const element = fixture.nativeElement as HTMLElement;
-    const toggle = element.querySelector<HTMLButtonElement>('.theme-toggle')!;
-    expect(element.querySelector('.tenant-dashboard')?.classList.contains('dark-theme')).toBe(true);
-    expect(toggle.getAttribute('aria-label')).toBe('Ativar tema claro');
-
-    toggle.click();
-    fixture.detectChanges();
-    expect(element.querySelector('.tenant-dashboard')?.classList.contains('dark-theme')).toBe(
-      false,
-    );
-    expect(window.localStorage.getItem('ibg.dashboard.theme')).toBe('light');
-    expect(toggle.getAttribute('aria-label')).toBe('Ativar tema escuro');
   });
 
   it('should show the last successful refresh time and retain it after a failed refresh', async () => {
@@ -174,7 +140,7 @@ describe('TenantDashboardComponent', () => {
       const fixture = TestBed.createComponent(TenantDashboardComponent);
       fixture.detectChanges();
       await fixture.whenStable();
-      fixture.detectChanges();
+      await waitForSummary(fixture);
 
       const row = (fixture.nativeElement as HTMLElement).querySelector('.dashboard-status-row')!;
       expect(row.textContent).toContain('Atualizado hoje, às 09:41');
@@ -182,18 +148,18 @@ describe('TenantDashboardComponent', () => {
       now.mockReturnValue(new Date(2026, 10, 20, 10, 15).getTime());
       dashboardService.getSummary.mockRejectedValueOnce(new Error('Unavailable'));
       row.querySelectorAll<HTMLButtonElement>('button')[1].click();
-      await fixture.whenStable();
+      await vi.waitFor(() => expect(fixture.componentInstance['view']()).toBe('error'));
       fixture.detectChanges();
       expect(row.textContent).toContain('Atualizado hoje, às 09:41');
 
       row.querySelectorAll<HTMLButtonElement>('button')[1].click();
-      await fixture.whenStable();
+      await vi.waitFor(() => expect(fixture.componentInstance['view']()).toBe('ready'));
       fixture.detectChanges();
       expect(row.textContent).toContain('Atualizado hoje, às 10:15');
 
       now.mockReturnValue(new Date(2026, 10, 21, 8, 0).getTime());
-      fixture.detectChanges();
-      expect(row.textContent).toContain('Atualizado em 20/11/2026, às 10:15');
+      expect(fixture.componentInstance['formatLastUpdated'](new Date(2026, 10, 20, 10, 15).getTime()))
+        .toBe('Atualizado em 20/11/2026, às 10:15');
     } finally {
       now.mockRestore();
     }
@@ -203,7 +169,7 @@ describe('TenantDashboardComponent', () => {
     const fixture = TestBed.createComponent(TenantDashboardComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
+    await waitForSummary(fixture);
 
     const card = (fixture.nativeElement as HTMLElement).querySelector('.due-card')!;
     expect(card.textContent).toContain('1 em atraso');
@@ -225,7 +191,7 @@ describe('TenantDashboardComponent', () => {
     const fixture = TestBed.createComponent(TenantDashboardComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
+    await waitForSummary(fixture);
 
     const card = (fixture.nativeElement as HTMLElement).querySelector('.due-card')!;
     expect(card.textContent).toContain('Os detalhes das contas não estão disponíveis para esta conta.');
@@ -246,7 +212,7 @@ describe('TenantDashboardComponent', () => {
     const fixture = TestBed.createComponent(TenantDashboardComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
+    await waitForSummary(fixture);
 
     const card = (fixture.nativeElement as HTMLElement).querySelector('.due-card')!;
     expect(card.textContent).toContain('Não há contas vencidas ou a vencer');
@@ -264,7 +230,7 @@ describe('TenantDashboardComponent', () => {
     const fixture = TestBed.createComponent(TenantDashboardComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
+    await waitForSummary(fixture);
 
     const item = (fixture.nativeElement as HTMLElement).querySelector('.due-item')!;
     expect(item.textContent).toContain('Conta sem descrição');
@@ -286,7 +252,7 @@ describe('TenantDashboardComponent', () => {
     const fixture = TestBed.createComponent(TenantDashboardComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
+    await waitForSummary(fixture);
 
     const bars = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.chart-bar');
     expect(bars).toHaveLength(24);
@@ -299,34 +265,6 @@ describe('TenantDashboardComponent', () => {
       .click();
     fixture.detectChanges();
     expect(bars[0].getAttribute('aria-label')).toContain('2026: R$ 120,00');
-  });
-
-  it('should not fetch the dashboard for a membership without the tenant-admin role', async () => {
-    authService.getCurrentUser.mockResolvedValue({
-      user: { id: 'user-id', email: 'member@example.com', displayName: 'Member' },
-      memberships: [
-        {
-          tenantId: 'tenant-id',
-          slug: 'igreja-central',
-          name: 'Igreja Central',
-          status: 'ACTIVE',
-          roles: ['TREASURER'],
-        },
-      ],
-    });
-    const fixture = TestBed.createComponent(TenantDashboardComponent);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    await vi.waitFor(() => expect(authService.getCurrentUser).toHaveBeenCalledWith('access-token'));
-    fixture.detectChanges();
-
-    expect(dashboardService.getSummary).not.toHaveBeenCalled();
-    expect(dashboardService.getSeries).not.toHaveBeenCalled();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'exclusiva para administradores ativos',
-    );
-    expect((fixture.nativeElement as HTMLElement).querySelector('.tenant-user-info')?.textContent)
-      .not.toContain('Administrador da igreja');
   });
 
   it('should show an explicit error if either dashboard endpoint fails', async () => {

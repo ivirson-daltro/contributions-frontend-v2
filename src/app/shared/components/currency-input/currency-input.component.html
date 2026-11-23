@@ -1,0 +1,12 @@
+<input
+  type="text"
+  inputmode="numeric"
+  autocomplete="off"
+  placeholder="0,00"
+  [value]="displayValue()"
+  [disabled]="disabled()"
+  [required]="required()"
+  (beforeinput)="onBeforeInput($event)"
+  (input)="onInput($event)"
+  (blur)="onTouched()"
+/>

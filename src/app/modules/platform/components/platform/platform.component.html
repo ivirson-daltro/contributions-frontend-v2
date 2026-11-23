@@ -80,7 +80,12 @@
           type="button"
           (click)="showCreateForm.set(!showCreateForm())"
         >
-          {{ showCreateForm() ? 'Cancelar' : '+ Nova igreja' }}
+          @if (showCreateForm()) {
+            Cancelar
+          } @else {
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/plus.svg#plus" /></svg>
+            Nova igreja
+          }
         </button>
       </div>
 
@@ -96,7 +101,7 @@
             aria-label="Fechar convite"
             (click)="dismissInvitation()"
           >
-            ×
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/close.svg#close" /></svg>
           </button>
           <p class="platform-eyebrow">CONVITE DO ADMINISTRADOR</p>
           <h2 id="invitation-title">Convite para {{ created.tenantName }}</h2>
@@ -332,7 +337,7 @@
                   <th scope="col">Armazenamento</th>
                   <th scope="col">Administrador</th>
                   <th scope="col">Período de teste</th>
-                  <th scope="col">Ação</th>
+                  <th scope="col" class="table-actions">Ação</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,7 +365,7 @@
                       }
                     </td>
                     <td>{{ formatDate(tenant.trialEndsAt) }}</td>
-                    <td>
+                    <td class="table-actions">
                       @if (!tenant.hasActiveTenantAdmin && tenant.status !== 'CANCELLED') {
                         <button
                           class="tenant-action-button"
@@ -402,7 +407,8 @@
                 type="button"
                 (click)="showCreateForm.set(true)"
               >
-                + Nova igreja
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/plus.svg#plus" /></svg>
+                Nova igreja
               </button>
             }
           </div>

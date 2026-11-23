@@ -1,0 +1,86 @@
+dialog {
+  box-sizing: border-box;
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  padding: 22px;
+  border: 1px solid #e6e8ef;
+  border-radius: 10px;
+  background: #fff;
+  color: #25283d;
+  font: inherit;
+  box-shadow: 0 20px 60px #17192b33;
+}
+
+dialog::backdrop {
+  background: #1c1e30a6;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+p {
+  margin: 10px 0 16px;
+  color: #65697b;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f5;
+}
+
+button {
+  min-height: 34px;
+  padding: 8px 13px;
+  border: 1px solid #e3e5ed;
+  border-radius: 6px;
+  background: #fff;
+  color: #50566c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+button.confirm {
+  border-color: #b83e49;
+  background: #b83e49;
+  color: #fff;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+button:focus-visible {
+  outline: 3px solid #a99eff;
+  outline-offset: 2px;
+}
+
+:host-context(.dark-theme) dialog {
+  border-color: #3a4055;
+  background: #202435;
+  color: #e1e3ee;
+}
+
+:host-context(.dark-theme) p {
+  color: #c1c5d4;
+}
+
+:host-context(.dark-theme) footer {
+  border-color: #3a4055;
+}
+
+:host-context(.dark-theme) button.cancel {
+  border-color: #3a4055;
+  background: #202435;
+  color: #e1e3ee;
+}

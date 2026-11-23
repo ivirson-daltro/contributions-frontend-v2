@@ -1,12 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../../../core/auth/services/auth.service';
-import { TenantMembership } from '../../../../core/auth/dtos/tenant-membership.dto';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { TenantContextService } from '../../../../core/tenant/services/tenant-context.service';
 import { DashboardSeriesResponse } from '../../dtos/dashboard-series-response.dto';
 import { DashboardSummaryResponse } from '../../dtos/dashboard-summary-response.dto';
 import { TenantDashboardService } from '../../services/tenant-dashboard.service';
 
-type DashboardView = 'loading' | 'ready' | 'error' | 'denied';
+type DashboardView = 'loading' | 'ready' | 'error';
 type ChartMetric = 'income' | 'expense';
 
 @Component({
@@ -14,21 +13,17 @@ type ChartMetric = 'income' | 'expense';
   selector: 'app-tenant-dashboard',
   templateUrl: './tenant-dashboard.component.html',
 })
-export class TenantDashboardComponent implements OnInit {
-  private readonly authService = inject(AuthService);
+export class TenantDashboardComponent {
   private readonly dashboardService = inject(TenantDashboardService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  private readonly context = inject(TenantContextService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly view = signal<DashboardView>('loading');
   protected readonly feedback = signal('');
   protected readonly summary = signal<DashboardSummaryResponse | null>(null);
   protected readonly series = signal<DashboardSeriesResponse | null>(null);
   protected readonly lastUpdated = signal<number | null>(null);
-  protected readonly membership = signal<TenantMembership | null>(null);
-  protected readonly displayName = signal('');
-  protected readonly isDarkTheme = signal(false);
-  protected readonly themeFeedback = signal('');
+  protected readonly membership = computed(() => this.context.current()?.membership ?? null);
   protected readonly chartMetric = signal<ChartMetric>('income');
   protected readonly payableItems = computed(() => {
     const payables = this.summary()?.payables;
@@ -75,34 +70,29 @@ export class TenantDashboardComponent implements OnInit {
     return [maxAmount, maxAmount * (2 / 3), maxAmount / 3, 0];
   });
 
-  private accessToken = '';
-  private readonly themePreferenceKey = 'ibg.dashboard.theme';
-  private tenantSlug = '';
+  protected accessToken = '';
+  protected tenantSlug = '';
   private tenantId = '';
+  private request = 0;
 
-  ngOnInit(): void {
-    this.restoreThemePreference();
-    this.tenantSlug = this.route.snapshot.paramMap.get('slug') ?? '';
-    void this.initialize();
-  }
-
-  protected toggleTheme(): void {
-    const darkTheme = !this.isDarkTheme();
-    this.isDarkTheme.set(darkTheme);
-    this.themeFeedback.set('');
-
-    try {
-      window.localStorage.setItem(this.themePreferenceKey, darkTheme ? 'dark' : 'light');
-    } catch {
-      this.themeFeedback.set(
-        'Tema aplicado nesta sessão, mas não foi possível salvar sua preferência.',
-      );
-    }
+  constructor() {
+    effect(() => {
+      const tenant = this.context.current();
+      this.request++;
+      this.summary.set(null);
+      this.series.set(null);
+      this.lastUpdated.set(null);
+      this.accessToken = tenant?.accessToken ?? '';
+      this.tenantId = tenant?.membership.tenantId ?? '';
+      this.tenantSlug = tenant?.membership.slug ?? '';
+      if (tenant) void this.loadDashboard();
+    });
   }
 
   protected async loadDashboard(): Promise<void> {
     if (!this.accessToken || !this.tenantId) return;
 
+    const request = ++this.request;
     this.view.set('loading');
     this.feedback.set('');
     try {
@@ -110,11 +100,13 @@ export class TenantDashboardComponent implements OnInit {
         this.dashboardService.getSummary(this.accessToken, this.tenantId),
         this.dashboardService.getSeries(this.accessToken, this.tenantId),
       ]);
+      if (request !== this.request || this.destroyRef.destroyed) return;
       this.summary.set(summary);
       this.series.set(series);
       this.lastUpdated.set(Date.now());
       this.view.set('ready');
     } catch {
+      if (request !== this.request || this.destroyRef.destroyed) return;
       this.view.set('error');
       this.feedback.set('Não foi possível carregar os dados do painel. Tente novamente.');
     }
@@ -164,57 +156,6 @@ export class TenantDashboardComponent implements OnInit {
 
   protected setChartMetric(metric: ChartMetric): void {
     this.chartMetric.set(metric);
-  }
-
-  protected async signOut(): Promise<void> {
-    try {
-      await this.authService.signOut();
-      await this.router.navigate(['/login']);
-    } catch {
-      this.feedback.set('Não foi possível encerrar a sessão. Tente novamente.');
-    }
-  }
-
-  private async initialize(): Promise<void> {
-    if (!this.tenantSlug) {
-      await this.router.navigate(['/select-church']);
-      return;
-    }
-
-    try {
-      this.accessToken = (await this.authService.getAccessToken()) ?? '';
-      if (!this.accessToken) {
-        await this.router.navigate(['/login']);
-        return;
-      }
-
-      const profile = await this.authService.getCurrentUser(this.accessToken);
-      const membership = profile.memberships.find(
-        (item) => item.slug === this.tenantSlug && item.status === 'ACTIVE',
-      );
-      if (!membership || !membership.roles.includes('TENANT_ADMIN')) {
-        this.view.set('denied');
-        return;
-      }
-
-      this.membership.set(membership);
-      this.tenantId = membership.tenantId;
-      this.displayName.set(profile.user.displayName || profile.user.email || 'Administrador');
-      await this.loadDashboard();
-    } catch {
-      this.view.set('error');
-      this.feedback.set('Não foi possível validar seu acesso ao painel. Tente novamente.');
-    }
-  }
-
-  private restoreThemePreference(): void {
-    try {
-      this.isDarkTheme.set(window.localStorage.getItem(this.themePreferenceKey) === 'dark');
-    } catch {
-      this.themeFeedback.set(
-        'Não foi possível carregar sua preferência de tema; o tema claro foi aplicado.',
-      );
-    }
   }
 
   protected formatDate(value: string): string {

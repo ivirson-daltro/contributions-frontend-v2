@@ -9,7 +9,9 @@
       </div>
     } @else if (view() === 'unavailable') {
       <div class="invite-state" role="alert">
-        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <span class="invite-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><use href="icons/alert.svg#alert" /></svg>
+        </span>
         <h1 id="invite-title">Convite não encontrado</h1>
         <p>
           Este link é inválido ou não está mais disponível. Peça um novo convite ao administrador da
@@ -19,7 +21,9 @@
       </div>
     } @else if (view() === 'error') {
       <div class="invite-state" role="alert">
-        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <span class="invite-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><use href="icons/alert.svg#alert" /></svg>
+        </span>
         <h1 id="invite-title">Não foi possível verificar o convite</h1>
         <p>{{ feedback() }}</p>
         <button class="invite-retry-button" type="button" (click)="loadPreview()">
@@ -28,7 +32,9 @@
       </div>
     } @else if (view() === 'expired') {
       <div class="invite-state" role="alert">
-        <span class="invite-state-icon" aria-hidden="true">!</span>
+        <span class="invite-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><use href="icons/alert.svg#alert" /></svg>
+        </span>
         <h1 id="invite-title">Convite indisponível</h1>
         <p>
           Este convite expirou, foi revogado ou já foi utilizado. Peça um novo link ao administrador
@@ -38,7 +44,9 @@
       </div>
     } @else if (view() === 'success') {
       <div class="invite-state invite-success" role="status">
-        <span class="invite-success-icon" aria-hidden="true">✓</span>
+        <span class="invite-success-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><use href="icons/check.svg#check" /></svg>
+        </span>
         <span class="invite-eyebrow">ACESSO CONFIRMADO</span>
         <h1 id="invite-title">Convite aceito!</h1>
         <p>
@@ -126,8 +134,7 @@
                 [attr.aria-pressed]="passwordVisible()"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M2.5 12s3.2-6 9.5-6 9.5 6 9.5 6-3.2 6-9.5 6-9.5-6-9.5-6Z" />
-                  <circle cx="12" cy="12" r="2.5" />
+                  <use href="icons/eye.svg#eye" />
                 </svg>
               </button>
             </div>
