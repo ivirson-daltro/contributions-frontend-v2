@@ -375,11 +375,6 @@ app-tenant-layout {
   stroke-width: 1.7;
 }
 
-.theme-feedback {
-  color: #80501b;
-  font-size: 0.5625rem;
-}
-
 .tenant-user button:focus-visible,
 .theme-toggle:focus-visible,
 .dashboard-feedback button:focus-visible,
@@ -1396,10 +1391,6 @@ app-tenant-layout {
   border-color: #454a60;
   background: #292d40;
   color: #e0e3ef;
-}
-
-.dark-theme .theme-feedback {
-  color: #f2ce91;
 }
 
 .dark-theme .user-avatar {

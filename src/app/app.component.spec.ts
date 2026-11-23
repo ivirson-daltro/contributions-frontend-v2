@@ -14,4 +14,16 @@ describe('App', () => {
     const fixture = TestBed.createComponent(AppComponent);
     expect(fixture.componentInstance).toBeTruthy();
   });
+
+  it('restores the saved theme before rendering routes', () => {
+    window.localStorage.setItem('ibg.dashboard.theme', 'dark');
+    try {
+      const fixture = TestBed.createComponent(AppComponent);
+      fixture.detectChanges();
+      expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+    } finally {
+      window.localStorage.removeItem('ibg.dashboard.theme');
+      document.documentElement.classList.remove('dark-theme');
+    }
+  });
 });

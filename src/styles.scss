@@ -20,6 +20,14 @@ table td.table-actions {
   color: #25283d;
 }
 
+.global-theme-feedback {
+  margin: 0;
+  padding: 8px 16px;
+  background: #fff3dc;
+  color: #80501b;
+  font-size: 0.75rem;
+}
+
 .select-church-page {
   display: grid;
   min-height: 100vh;
@@ -133,7 +141,13 @@ table td.table-actions {
   }
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark-theme {
+  color-scheme: dark;
+  background: #202435;
+  color: #f3f2fa;
+}
+
+:root.dark-theme {
   .select-church-page {
     background: #171923;
   }
@@ -1265,13 +1279,7 @@ a {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    background: #202435;
-    color: #f3f2fa;
-  }
-
+:root.dark-theme .login-page {
   .welcome-panel {
     background: #191727;
   }
@@ -1364,7 +1372,9 @@ a {
       color: #b9aaff;
     }
   }
+}
 
+@media (prefers-color-scheme: dark) {
   .platform-page {
     min-height: 100vh;
     background: #f5f6fa;
@@ -2216,72 +2226,72 @@ a {
       color: #f0c98e;
     }
   }
+}
 
-  @media (prefers-color-scheme: dark) {
-    .invite-header h1,
-    .invite-state h1 {
-      color: #f3f2fa;
-    }
+:root.dark-theme .login-page {
+  .invite-header h1,
+  .invite-state h1 {
+    color: #f3f2fa;
+  }
 
-    .invite-header > p,
-    .invite-state > p,
-    .invite-terms,
-    .invite-footer {
-      color: #aeb3c5;
-    }
+  .invite-header > p,
+  .invite-state > p,
+  .invite-terms,
+  .invite-footer {
+    color: #aeb3c5;
+  }
 
-    .invite-summary {
-      background: #352e51;
-    }
+  .invite-summary {
+    background: #352e51;
+  }
 
-    .invite-email,
-    .invite-success > p strong {
-      color: #f3f2fa;
-    }
+  .invite-email,
+  .invite-success > p strong {
+    color: #f3f2fa;
+  }
 
-    .invite-role,
-    .invite-back-link,
-    .invite-eyebrow {
-      color: #b9aaff;
-    }
+  .invite-role,
+  .invite-back-link,
+  .invite-eyebrow {
+    color: #b9aaff;
+  }
 
-    .invite-one-time {
-      color: #b8bdd0;
-    }
+  .invite-one-time {
+    color: #b8bdd0;
+  }
 
-    .existing-account-note {
-      border-left-color: #8d7bfa;
-      background: #29273d;
-      color: #c5c8d6;
-    }
+  .existing-account-note {
+    border-left-color: #8d7bfa;
+    background: #29273d;
+    color: #c5c8d6;
+  }
 
-    .invite-field label {
-      color: #e4e5ed;
-    }
+  .invite-field label {
+    color: #e4e5ed;
+  }
 
-    .invite-field input {
-      border-color: #4c5571;
-      background: #202435;
-      color: #f3f2fa;
-    }
+  .invite-field input {
+    border-color: #4c5571;
+    background: #202435;
+    color: #f3f2fa;
+  }
 
-    .invite-field input::placeholder,
-    .invite-visibility-button {
-      color: #aeb3c5;
-    }
+  .invite-field input::placeholder,
+  .invite-visibility-button {
+    color: #aeb3c5;
+  }
 
-    .invite-field-hint {
-      color: #aeb3c5;
-    }
+  .invite-field-hint {
+    color: #aeb3c5;
+  }
 
-    .invite-state-icon {
-      background: #3a302b;
-      color: #efb68c;
-    }
+  .invite-state-icon {
+    background: #3a302b;
+    color: #efb68c;
+  }
 
-    .invite-success-icon {
-      background: #243b33;
-      color: #85d4a3;
-    }
+  .invite-success-icon {
+    background: #243b33;
+    color: #85d4a3;
   }
 }

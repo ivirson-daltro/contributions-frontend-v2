@@ -157,6 +157,22 @@ describe('Tenant routes', () => {
     expect(auth.getCurrentUser).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the selected theme when signing out to the login page', async () => {
+    const harness = await RouterTestingHarness.create('/tenant/igreja-central');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(harness.routeNativeElement?.querySelector('.tenant-user-info')).not.toBeNull();
+    });
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('.theme-toggle')!.click();
+    harness.detectChanges();
+    expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+    const buttons = harness.routeNativeElement!.querySelectorAll<HTMLButtonElement>('.tenant-user > button');
+    buttons[buttons.length - 1].click();
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/login'));
+    expect(window.localStorage.getItem('ibg.dashboard.theme')).toBe('dark');
+    expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+  });
+
   it('does not instantiate a page for a non-admin membership', async () => {
     auth.getCurrentUser.mockResolvedValue({
       user: { displayName: 'Member' },

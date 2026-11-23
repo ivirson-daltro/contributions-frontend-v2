@@ -98,5 +98,9 @@ overview (`/tenant/:slug`) and contributions (`/tenant/:slug/contributions`).
 The overview's new-contribution shortcut adds `?new=1` to open the form after
 the contribution catalogs load.
 
+The light/dark theme selected in the tenant layout is also used by the login,
+two-factor, invitation, and church-selection screens. The preference is saved
+locally and defaults to light when no preference has been saved.
+
 The shared currency input formats typed digits as Brazilian currency and uses
 an ungrouped decimal string (for example, `200.55`) as its form value.
