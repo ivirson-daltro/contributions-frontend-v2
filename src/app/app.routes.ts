@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authenticatedGuard, mfaGuard } from './core/auth/guards/auth.guard';
+import { tenantAdminGuard } from './core/tenant/guards/tenant-admin.guard';
 
 export const routes: Routes = [
   {
@@ -37,6 +39,7 @@ export const routes: Routes = [
   },
   {
     path: 'platform',
+    canActivate: [authenticatedGuard, mfaGuard],
     loadComponent: () =>
       import('./modules/platform/components/platform/platform.component').then(
         (module) => module.PlatformComponent,
@@ -45,6 +48,7 @@ export const routes: Routes = [
   },
   {
     path: 'select-church',
+    canActivate: [authenticatedGuard, mfaGuard],
     loadComponent: () =>
       import('./modules/memberships/components/select-church/select-church.component').then(
         (module) => module.SelectChurchComponent,
@@ -53,6 +57,7 @@ export const routes: Routes = [
   },
   {
     path: 'tenant/:slug',
+    canActivate: [authenticatedGuard, mfaGuard, tenantAdminGuard],
     loadComponent: () =>
       import('./layout/tenant-layout/tenant-layout.component').then(
         (module) => module.TenantLayoutComponent,

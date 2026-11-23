@@ -66,6 +66,11 @@ project URL and its public publishable key in
 values are exposed to the browser and must not be used for privileged
 operations; never put a `service_role` key in the frontend.
 
+Development builds use `http://localhost:3000/v1` from
+`src/environments/environment.ts`. Production builds replace that file with
+`src/environments/environment.production.ts` and use `/v1` on the same origin.
+Update the production file when the API is served from another host.
+
 The local API at `http://localhost:3000` does not expose a login endpoint.
 The platform console at `/platform` uses the API URL configured as `apiUrl` in
 [`src/environments/environment.ts`](src/environments/environment.ts). It

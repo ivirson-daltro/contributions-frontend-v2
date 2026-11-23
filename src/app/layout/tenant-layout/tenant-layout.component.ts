@@ -16,7 +16,6 @@ type TenantView = 'loading' | 'ready' | 'error' | 'denied';
 @Component({
   selector: 'app-tenant-layout',
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  providers: [TenantContextService],
   templateUrl: './tenant-layout.component.html',
 })
 export class TenantLayoutComponent implements OnInit {
@@ -26,24 +25,47 @@ export class TenantLayoutComponent implements OnInit {
   protected readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly theme = inject(ThemeService);
-  private request = 0;
 
   protected readonly view = signal<TenantView>('loading');
   protected readonly feedback = signal('');
   protected readonly tenant = this.context.current;
-  protected readonly displayName = signal('');
+  protected readonly displayName = this.context.displayName;
   protected readonly isDarkTheme = this.theme.isDarkTheme;
   protected tenantSlug = '';
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.tenantSlug = params.get('slug') ?? '';
-      void this.initialize();
+      this.syncContext();
     });
   }
 
-  protected retryAccess(): void {
-    void this.initialize();
+  protected async retryAccess(): Promise<void> {
+    this.view.set('loading');
+    this.feedback.set('');
+    try {
+      const accessToken = await this.authService.getAccessToken();
+      if (!accessToken) {
+        await this.router.navigate(['/login']);
+        return;
+      }
+      const profile = await this.authService.getCurrentUser(accessToken);
+      const membership = profile.memberships.find(
+        (item) => item.slug === this.tenantSlug && item.status === 'ACTIVE',
+      );
+      if (!membership || !membership.roles.includes('TENANT_ADMIN')) {
+        this.context.status.set('denied');
+        this.syncContext();
+        return;
+      }
+      this.context.current.set({ accessToken, membership });
+      this.context.displayName.set(profile.user.displayName || profile.user.email || 'Administrador');
+      this.context.status.set('ready');
+      this.syncContext();
+    } catch {
+      this.context.status.set('error');
+      this.syncContext();
+    }
   }
 
   protected toggleTheme(): void {
@@ -59,43 +81,29 @@ export class TenantLayoutComponent implements OnInit {
     }
   }
 
-  private async initialize(): Promise<void> {
-    const request = ++this.request;
+  private syncContext(): void {
     const slug = this.tenantSlug;
-    this.context.current.set(null);
-    this.displayName.set('');
-    this.feedback.set('');
-    this.view.set('loading');
-
-    if (!slug) {
-      await this.router.navigate(['/select-church']);
+    const tenant = this.context.current();
+    if (this.context.status() === 'denied') {
+      this.view.set('denied');
+      this.feedback.set('');
       return;
     }
-
-    try {
-      const accessToken = await this.authService.getAccessToken();
-      if (request !== this.request || this.destroyRef.destroyed) return;
-      if (!accessToken) {
-        await this.router.navigate(['/login']);
-        return;
-      }
-
-      const profile = await this.authService.getCurrentUser(accessToken);
-      if (request !== this.request || this.destroyRef.destroyed) return;
-      const membership = profile.memberships.find(
-        (item) => item.slug === slug && item.status === 'ACTIVE',
-      );
-      if (!membership || !membership.roles.includes('TENANT_ADMIN')) {
-        this.view.set('denied');
-        return;
-      }
-      this.context.current.set({ accessToken, membership });
-      this.displayName.set(profile.user.displayName || profile.user.email || 'Administrador');
-      this.view.set('ready');
-    } catch {
-      if (request !== this.request || this.destroyRef.destroyed) return;
+    if (this.context.status() === 'error') {
       this.view.set('error');
       this.feedback.set('Não foi possível validar seu acesso ao painel. Tente novamente.');
+      return;
     }
+    if (this.context.status() === 'loading') {
+      this.view.set('loading');
+      return;
+    }
+    if (!slug || !tenant || tenant.membership.slug !== slug) {
+      this.view.set('error');
+      this.feedback.set('Não foi possível validar o contexto da igreja.');
+      return;
+    }
+    this.feedback.set('');
+    this.view.set('ready');
   }
 }

@@ -19,6 +19,7 @@ describe('Tenant routes', () => {
   const auth = {
     getAccessToken: vi.fn(),
     getCurrentUser: vi.fn(),
+    getTotpFactorStatus: vi.fn(),
     signOut: vi.fn(),
   };
   const dashboard = { getSummary: vi.fn(), getSeries: vi.fn() };
@@ -36,6 +37,11 @@ describe('Tenant routes', () => {
     auth.getCurrentUser.mockReset().mockResolvedValue({
       user: { displayName: 'Admin', email: 'admin@example.com' },
       memberships: [membership],
+    });
+    auth.getTotpFactorStatus.mockReset().mockResolvedValue({
+      factors: [],
+      currentLevel: 'aal2',
+      nextLevel: 'aal2',
     });
     auth.signOut.mockReset().mockResolvedValue(undefined);
     dashboard.getSummary.mockReset().mockResolvedValue({
