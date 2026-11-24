@@ -14,7 +14,7 @@ const supabase = {
 
 describe('AuthService password recovery', () => {
   let notify: (event: AuthChangeEvent, session: Session | null) => void;
-  const session = { user: { id: 'user-id' } } as Session;
+  const session = { user: { id: 'user-id' }, access_token: 'recovery-token' } as Session;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,6 +58,7 @@ describe('AuthService password recovery', () => {
     await expect(recovery).resolves.toBe(true);
     await auth.updateRecoveredPassword('Password1');
     expect(supabase.updateUser).toHaveBeenCalledWith({ password: 'Password1' });
+    notify('PASSWORD_RECOVERY', session);
     await expect(auth.updateRecoveredPassword('Password2')).rejects.toThrow();
     await auth.signOutRecovery();
     expect(supabase.signOut).toHaveBeenCalledWith({ scope: 'local' });
@@ -89,11 +90,45 @@ describe('AuthService password recovery', () => {
     await expect(recovery).resolves.toBe(false);
   });
 
-  it('revokes recovery authorization when the session changes', async () => {
+  it('keeps recovery authorization when another tab reports the same session', async () => {
     const auth = TestBed.inject(AuthService);
     notify('PASSWORD_RECOVERY', session);
     await expect(auth.initializePasswordRecovery()).resolves.toBe(true);
     notify('SIGNED_IN', session);
+    await auth.updateRecoveredPassword('Password1');
+    expect(supabase.updateUser).toHaveBeenCalledWith({ password: 'Password1' });
+  });
+
+  it('preserves a refreshed recovery session', async () => {
+    const makeSession = (id: string, version: number): Session => ({
+      ...session,
+      access_token: `header.${btoa(JSON.stringify({ session_id: id, version }))}.signature`,
+    });
+    const auth = TestBed.inject(AuthService);
+    notify('PASSWORD_RECOVERY', makeSession('recovery-session', 1));
+    await expect(auth.initializePasswordRecovery()).resolves.toBe(true);
+    notify('TOKEN_REFRESHED', makeSession('recovery-session', 2));
+    notify('SIGNED_IN', makeSession('recovery-session', 2));
+    await auth.updateRecoveredPassword('Password1');
+    expect(supabase.updateUser).toHaveBeenCalledWith({ password: 'Password1' });
+  });
+
+  it('rejects a different session for the same user', async () => {
+    const makeSession = (id: string): Session => ({
+      ...session,
+      access_token: `header.${btoa(JSON.stringify({ session_id: id }))}.signature`,
+    });
+    const auth = TestBed.inject(AuthService);
+    notify('PASSWORD_RECOVERY', makeSession('recovery-session'));
+    notify('SIGNED_IN', makeSession('another-session'));
+    await expect(auth.updateRecoveredPassword('Password1')).rejects.toThrow();
+    expect(supabase.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('revokes recovery authorization on sign-out', async () => {
+    const auth = TestBed.inject(AuthService);
+    notify('PASSWORD_RECOVERY', session);
+    notify('SIGNED_OUT', null);
     await expect(auth.updateRecoveredPassword('Password1')).rejects.toThrow();
   });
 
@@ -112,6 +147,33 @@ describe('AuthService password recovery', () => {
 describe('AuthService with the Supabase client', () => {
   afterEach(() => {
     window.history.replaceState({}, '', '/');
+  });
+
+  it('propagates the recovery email rate limit from the SDK without retrying', async () => {
+    window.history.replaceState({}, '', '/forgot-password');
+    const fetch = vi.fn(async () => new Response(
+      JSON.stringify({ code: 'over_email_send_rate_limit', message: 'email rate limit exceeded' }),
+      {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'X-Supabase-Api-Version': '2024-01-01' },
+      },
+    ));
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        {
+          provide: SUPABASE_CLIENT,
+          useFactory: () => createClient('https://example.test', 'test-key', {
+            auth: { autoRefreshToken: false, persistSession: false },
+            global: { fetch },
+          }),
+        },
+      ],
+    });
+
+    await expect(TestBed.inject(AuthService).requestPasswordReset('user@example.com'))
+      .rejects.toMatchObject({ status: 429, code: 'over_email_send_rate_limit' });
+    expect(fetch).toHaveBeenCalledOnce();
   });
 
   it('accepts a recovery callback processed by the real SDK', async () => {

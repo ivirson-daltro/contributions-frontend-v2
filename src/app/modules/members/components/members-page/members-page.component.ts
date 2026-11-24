@@ -1,0 +1,294 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime } from 'rxjs';
+import { TenantContextService } from '../../../../core/tenant/services/tenant-context.service';
+import { canManageAllMemberFields } from '../../../../core/tenant/tenant-access';
+import { ToastService } from '../../../../core/ui/toast.service';
+import { Member, MemberList, MemberPayload, MemberStatus, MemberStatusFilter, MemberSummary, MemberType } from '../../dtos/member.dto';
+import { MembersService } from '../../services/members.service';
+import { MemberFormComponent, MemberFormSubmission } from '../member-form/member-form.component';
+
+type MembersView = 'list' | 'detail' | 'create' | 'edit';
+
+@Component({
+  selector: 'app-members-page',
+  imports: [DatePipe, ReactiveFormsModule, MemberFormComponent],
+  templateUrl: './members-page.component.html',
+  styleUrl: './members-page.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class MembersPageComponent implements OnInit {
+  private readonly context = inject(TenantContextService);
+  private readonly service = inject(MembersService);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
+  private listRequest = 0;
+  private pendingCreate: MemberPayload | null = null;
+
+  protected readonly tenant = this.context.current;
+  protected readonly fullAccess = computed(() => canManageAllMemberFields(this.tenant()?.membership.roles ?? []));
+  protected readonly view = signal<MembersView>('list');
+  protected readonly list = signal<MemberList | null>(null);
+  protected readonly types = signal<MemberType[]>([]);
+  protected readonly selected = signal<Member | null>(null);
+  protected readonly loading = signal(false);
+  protected readonly catalogsLoading = signal(false);
+  protected readonly catalogError = signal(false);
+  protected readonly listError = signal(false);
+  protected readonly opening = signal(false);
+  protected readonly saving = signal(false);
+  protected readonly confirmingDelete = signal(false);
+  protected readonly duplicates = signal<readonly string[] | null>(null);
+  protected readonly page = signal(1);
+  protected readonly pageSize = signal(8);
+  protected readonly pageCount = computed(() => Math.max(1, Math.ceil((this.list()?.meta.total ?? 0) / this.pageSize())));
+  protected readonly firstItem = computed(() => (this.list()?.meta.total ?? 0) === 0 ? 0 : (this.page() - 1) * this.pageSize() + 1);
+  protected readonly lastItem = computed(() => Math.min(this.page() * this.pageSize(), this.list()?.meta.total ?? 0));
+  protected readonly canEditSelected = computed(() => {
+    const member = this.selected();
+    const tenant = this.tenant();
+    return !!member && !!tenant && (this.fullAccess() || member.createdBy === tenant.userId);
+  });
+  protected readonly statusLabels: Record<MemberStatus, string> = {
+    ACTIVE: 'Ativo', INACTIVE: 'Inativo', TRANSFERRED: 'Transferido', DECEASED: 'Falecido',
+  };
+  protected readonly filters = new FormGroup({
+    q: new FormControl('', { nonNullable: true }),
+    memberTypeId: new FormControl('', { nonNullable: true }),
+    status: new FormControl<MemberStatusFilter>('ACTIVE', { nonNullable: true }),
+  });
+  private readonly tenantEffect = effect(() => {
+    const tenant = this.tenant();
+    if (!tenant) return;
+    untracked(() => {
+      this.listRequest++;
+      this.list.set(null);
+      this.types.set([]);
+      this.selected.set(null);
+      this.view.set('list');
+      this.page.set(1);
+      this.opening.set(false);
+      this.saving.set(false);
+      this.confirmingDelete.set(false);
+      this.pendingCreate = null;
+      this.duplicates.set(null);
+      this.filters.reset({ q: '', memberTypeId: '', status: 'ACTIVE' }, { emitEvent: false });
+      void this.loadTypes();
+      void this.loadList();
+    });
+  });
+
+  ngOnInit(): void {
+    this.filters.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.page.set(1);
+      void this.loadList();
+    });
+  }
+
+  protected async loadTypes(): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant) return;
+    this.catalogsLoading.set(true);
+    this.catalogError.set(false);
+    try {
+      const types = await this.service.listTypes(tenant.accessToken, tenant.membership.tenantId);
+      if (this.tenant() !== tenant) return;
+      this.types.set(types);
+    } catch {
+      if (this.tenant() !== tenant) return;
+      this.catalogError.set(true);
+      this.toast.error('Não foi possível carregar os tipos de membro.');
+    } finally {
+      if (this.tenant() === tenant) this.catalogsLoading.set(false);
+    }
+  }
+
+  protected async loadList(): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant) return;
+    const request = ++this.listRequest;
+    this.loading.set(true);
+    this.listError.set(false);
+    const filters = this.filters.getRawValue();
+    try {
+      const result = await this.service.list(tenant.accessToken, tenant.membership.tenantId, {
+        q: filters.q.trim(), memberTypeId: filters.memberTypeId, status: filters.status,
+        page: this.page(), pageSize: this.pageSize(), sort: 'name', order: 'asc',
+      });
+      if (request !== this.listRequest || this.tenant() !== tenant) return;
+      if (result.data.length === 0 && result.meta.total > 0 && this.page() > 1) {
+        this.page.set(Math.ceil(result.meta.total / this.pageSize()));
+        await this.loadList();
+        return;
+      }
+      this.list.set(result);
+    } catch {
+      if (request !== this.listRequest || this.tenant() !== tenant) return;
+      this.list.set(null);
+      this.listError.set(true);
+      this.toast.error('Não foi possível carregar os membros. Tente novamente.');
+    } finally {
+      if (request === this.listRequest && this.tenant() === tenant) this.loading.set(false);
+    }
+  }
+
+  protected changePage(page: number): void {
+    if (page < 1 || page > this.pageCount() || this.loading()) return;
+    this.page.set(page);
+    void this.loadList();
+  }
+
+  protected changePageSize(value: string): void {
+    const size = Number(value);
+    if (![8, 20, 50].includes(size)) return;
+    this.pageSize.set(size);
+    this.page.set(1);
+    void this.loadList();
+  }
+
+  protected async openMember(item: MemberSummary): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant || this.opening()) return;
+    this.opening.set(true);
+    try {
+      const member = await this.service.get(tenant.accessToken, tenant.membership.tenantId, item.id);
+      if (this.tenant() !== tenant) return;
+      this.selected.set(member);
+      this.confirmingDelete.set(false);
+      this.view.set('detail');
+    } catch (error) {
+      if (this.tenant() !== tenant) return;
+      this.toast.error(this.errorMessage(error, 'consultar'));
+    } finally {
+      if (this.tenant() === tenant) this.opening.set(false);
+    }
+  }
+
+  protected openCreate(): void {
+    if (this.catalogsLoading() || this.catalogError() || this.types().length === 0) return;
+    this.selected.set(null);
+    this.view.set('create');
+  }
+
+  protected openEdit(): void {
+    if (!this.canEditSelected() || this.catalogsLoading() || this.catalogError()) return;
+    this.view.set('edit');
+  }
+
+  protected closeForm(): void {
+    this.pendingCreate = null;
+    this.duplicates.set(null);
+    this.view.set(this.selected() ? 'detail' : 'list');
+  }
+
+  protected async saveMember(submission: MemberFormSubmission): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant || this.saving()) return;
+    const member = this.selected();
+    if (this.view() === 'edit' && (!member || !this.canEditSelected())) return;
+    if (member && Object.keys(submission.changes).length === 0) {
+      this.toast.warning('Nenhuma alteração para salvar.');
+      return;
+    }
+    this.saving.set(true);
+    try {
+      const result = member
+        ? await this.service.update(tenant.accessToken, tenant.membership.tenantId, member.id, submission.changes)
+        : await this.service.create(tenant.accessToken, tenant.membership.tenantId, submission.payload);
+      if (this.tenant() !== tenant) return;
+      this.finishSave(result, member ? 'Membro atualizado.' : 'Membro cadastrado.');
+    } catch (error) {
+      if (this.tenant() !== tenant) return;
+      if (!member && this.errorCode(error) === 'POSSIBLE_DUPLICATE') {
+        this.pendingCreate = submission.payload;
+        this.duplicates.set(this.duplicateNames(error));
+      } else {
+        this.toast.error(this.errorMessage(error, member ? 'atualizar' : 'cadastrar'));
+      }
+    } finally {
+      if (this.tenant() === tenant) this.saving.set(false);
+    }
+  }
+
+  protected async confirmDuplicate(): Promise<void> {
+    const tenant = this.tenant();
+    const payload = this.pendingCreate;
+    if (!tenant || !payload || this.saving()) return;
+    this.saving.set(true);
+    try {
+      const member = await this.service.create(tenant.accessToken, tenant.membership.tenantId, payload, true);
+      if (this.tenant() !== tenant) return;
+      this.finishSave(member, 'Membro cadastrado.');
+    } catch (error) {
+      if (this.tenant() !== tenant) return;
+      this.toast.error(this.errorMessage(error, 'cadastrar'));
+    } finally {
+      if (this.tenant() === tenant) this.saving.set(false);
+    }
+  }
+
+  protected reviewDuplicate(): void {
+    this.pendingCreate = null;
+    this.duplicates.set(null);
+  }
+
+  protected async deleteMember(): Promise<void> {
+    const tenant = this.tenant();
+    const member = this.selected();
+    if (!tenant || !member || !this.canEditSelected() || this.saving()) return;
+    this.saving.set(true);
+    try {
+      await this.service.delete(tenant.accessToken, tenant.membership.tenantId, member.id);
+      if (this.tenant() !== tenant) return;
+      this.toast.success('Membro excluído.');
+      this.selected.set(null);
+      this.confirmingDelete.set(false);
+      this.view.set('list');
+      await this.loadList();
+    } catch (error) {
+      if (this.tenant() !== tenant) return;
+      this.toast.error(this.errorMessage(error, 'excluir'));
+    } finally {
+      if (this.tenant() === tenant) this.saving.set(false);
+    }
+  }
+
+  private finishSave(member: Member, message: string): void {
+    this.pendingCreate = null;
+    this.duplicates.set(null);
+    this.selected.set(member);
+    this.view.set('detail');
+    this.toast.success(message);
+    void this.loadList();
+  }
+
+  private errorCode(error: unknown): string | null {
+    if (!(error instanceof HttpErrorResponse)) return null;
+    const body: unknown = error.error;
+    if (typeof body !== 'object' || body === null || !('code' in body)) return null;
+    return typeof body.code === 'string' ? body.code : null;
+  }
+
+  private duplicateNames(error: unknown): string[] {
+    if (!(error instanceof HttpErrorResponse)) return [];
+    const body: unknown = error.error;
+    if (typeof body !== 'object' || body === null || !('errors' in body) || !Array.isArray(body.errors)) return [];
+    return body.errors.flatMap((item: unknown) =>
+      typeof item === 'object' && item !== null && 'name' in item && typeof item.name === 'string' ? [item.name] : [],
+    );
+  }
+
+  private errorMessage(error: unknown, action: string): string {
+    const code = this.errorCode(error);
+    if (code === 'MEMBER_HAS_ACCESS') return 'Este membro possui acesso ativo e não pode ser excluído.';
+    if (code === 'MEMBER_NOT_FOUND') return 'Este membro não está mais disponível. Atualize a lista.';
+    if (code === 'INVALID_REFERENCE') return 'O tipo de membro é inválido ou está inativo. Atualize os tipos.';
+    if (error instanceof HttpErrorResponse && error.status === 401) return 'Sua sessão expirou. Entre novamente.';
+    if (error instanceof HttpErrorResponse && error.status === 403) return 'Você não tem permissão para esta ação.';
+    if (error instanceof HttpErrorResponse && error.status === 423) return 'Esta igreja não permite alterações no momento.';
+    return `Não foi possível ${action} o membro. Confira os dados e tente novamente.`;
+  }
+}

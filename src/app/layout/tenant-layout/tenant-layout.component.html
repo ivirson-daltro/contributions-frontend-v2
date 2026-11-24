@@ -16,18 +16,21 @@
 
     <nav class="tenant-navigation" aria-label="Navegação da igreja">
       <span class="navigation-label">PRINCIPAL</span>
+      @if (tenant()?.membership?.roles?.includes('TENANT_ADMIN')) {
       <a class="navigation-item" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }" [routerLink]="['/tenant', tenantSlug]">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <use href="icons/dashboard.svg#dashboard" />
         </svg>
         Visão geral
       </a>
-      <button class="navigation-item" type="button" disabled>
+      }
+      <a class="navigation-item" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLink]="['/tenant', tenantSlug, 'members']">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <use href="icons/users.svg#users" />
         </svg>
         Membros
-      </button>
+      </a>
+      @if (tenant()?.membership?.roles?.includes('TENANT_ADMIN')) {
       <a class="navigation-item" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }" [routerLink]="['/tenant', tenantSlug, 'contributions']">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <use href="icons/arrow-up.svg#arrow-up" />
@@ -72,6 +75,7 @@
         </svg>
         Configurações
       </button>
+      }
     </nav>
 
     <div class="sidebar-bottom">
@@ -120,6 +124,10 @@
           <strong>{{ displayName() }}</strong>
           @if (tenant()?.membership?.roles?.includes('TENANT_ADMIN')) {
             <span>Administrador da igreja</span>
+          } @else if (tenant()?.membership?.roles?.includes('SECRETARY')) {
+            <span>Secretaria</span>
+          } @else if (tenant()?.membership?.roles?.includes('TREASURER')) {
+            <span>Tesouraria</span>
           }
         </div>
         <button type="button" (click)="signOut()">Sair</button>
@@ -129,7 +137,7 @@
     @if (view() === 'denied') {
       <section class="dashboard-state" role="alert">
         <h1>Acesso não disponível</h1>
-        <p>Esta área é exclusiva para administradores ativos da igreja.</p>
+        <p>Esta área é exclusiva para {{ route.snapshot.data['memberAccess'] ? 'perfis autorizados' : 'administradores ativos' }} da igreja.</p>
         <a routerLink="/select-church">Voltar para seleção de igreja</a>
       </section>
     } @else if (view() === 'error') {

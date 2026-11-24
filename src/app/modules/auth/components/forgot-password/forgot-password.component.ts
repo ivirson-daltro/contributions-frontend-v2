@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { isAuthError } from '@supabase/supabase-js';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { GlobalLoadingService } from '../../../../core/ui/global-loading.service';
 import { ToastService } from '../../../../core/ui/toast.service';
@@ -35,8 +36,12 @@ export class ForgotPasswordComponent {
       await this.loading.track(() => this.auth.requestPasswordReset(this.form.controls.email.value.trim()));
       this.sent.set(true);
       this.toast.success('Se o e-mail estiver cadastrado, enviaremos as instruções de recuperação.');
-    } catch {
-      this.toast.error('Não foi possível solicitar a recuperação. Tente novamente.');
+    } catch (error) {
+      if (isAuthError(error) && error.status === 429) {
+        this.toast.warning('Muitas solicitações de recuperação. Aguarde e tente novamente mais tarde.');
+      } else {
+        this.toast.error('Não foi possível solicitar a recuperação. Tente novamente.');
+      }
     } finally {
       this.isSubmitting.set(false);
     }

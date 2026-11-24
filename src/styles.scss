@@ -487,9 +487,29 @@ a {
   font-size: 0.625rem;
 }
 
+.login-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.remember-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.625rem;
+}
+
+.remember-email input {
+  margin: 0;
+  accent-color: #6251df;
+}
+
 .forgot-link {
-  display: block;
-  margin: 0 0 24px auto;
+  margin-left: auto;
   text-align: right;
   text-decoration: none;
 }
@@ -1269,8 +1289,12 @@ $spacing-sizes: (
     height: 36px;
   }
 
+  .login-options {
+    margin-bottom: 10px;
+  }
+
+  .remember-email,
   .forgot-link {
-    margin: 0 0 10px;
     font-size: 0.6875rem;
   }
 

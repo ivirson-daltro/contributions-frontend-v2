@@ -1,0 +1,168 @@
+<div class="members-content">
+  @if (view() === 'list') {
+    <header class="members-heading">
+      <div>
+        <h1>Membros</h1>
+        <p>Cuide das pessoas que fazem parte da sua comunidade.</p>
+      </div>
+      <button type="button" class="member-button primary" (click)="openCreate()"
+        [disabled]="catalogsLoading() || catalogError() || !types().length">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/plus.svg#plus" /></svg>
+        Novo membro
+      </button>
+    </header>
+
+    @if (catalogError()) {
+      <p class="notice" role="alert">Não foi possível carregar os tipos de membro.
+        <button type="button" class="text-action" (click)="loadTypes()">Tentar novamente</button>
+      </p>
+    } @else if (!catalogsLoading() && types().length === 0) {
+      <p class="notice" role="status">Não há tipos de membro ativos para cadastrar.</p>
+    }
+
+    <section class="member-card members-list" aria-labelledby="members-list-title">
+      <h2 id="members-list-title" class="list-title">Todos os membros</h2>
+      <form class="members-filters" [formGroup]="filters" (ngSubmit)="$event.preventDefault()">
+        <label>
+          <span class="visually-hidden">Buscar por nome</span>
+          <input formControlName="q" maxlength="120" type="search" placeholder="Buscar por nome" />
+        </label>
+        <label>
+          <span class="visually-hidden">Tipo de membro</span>
+          <select formControlName="memberTypeId">
+            <option value="">Todos os tipos</option>
+            @for (type of types(); track type.id) {
+              <option [value]="type.id">{{ type.description }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span class="visually-hidden">Situação</span>
+          <select formControlName="status">
+            <option value="ACTIVE">Ativos</option>
+            <option value="INACTIVE">Inativos</option>
+            <option value="TRANSFERRED">Transferidos</option>
+            <option value="DECEASED">Falecidos</option>
+            <option value="ALL">Todas as situações</option>
+          </select>
+        </label>
+      </form>
+
+      @if (listError()) {
+        <div class="list-state" role="alert">Não foi possível carregar a lista.
+          <button type="button" class="text-action" (click)="loadList()">Tentar novamente</button>
+        </div>
+      } @else if (loading() && !list()) {
+        <p class="list-state" role="status">Carregando membros...</p>
+      } @else if (list(); as result) {
+        @if (result.data.length === 0) {
+          <p class="list-state">Nenhum membro encontrado para os filtros selecionados.</p>
+        } @else {
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Nome</th><th>Tipo de membro</th><th>Contato</th><th>Situação</th><th>Ações</th></tr></thead>
+              <tbody>
+                @for (member of result.data; track member.id) {
+                  <tr>
+                    <td>{{ member.name }}</td>
+                    <td>{{ member.memberType.description }}</td>
+                    <td>{{ member.phone || '—' }}</td>
+                    <td><span class="status" [class.active]="member.status === 'ACTIVE'">{{ statusLabels[member.status] }}</span></td>
+                    <td>
+                      <button type="button" class="row-action" (click)="openMember(member)" [disabled]="opening()"
+                        [attr.aria-label]="'Ver detalhes de ' + member.name">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        <div class="pagination">
+          <span>{{ firstItem() }}–{{ lastItem() }} de {{ result.meta.total }} membros</span>
+          <div>
+            <label>Por página
+              <select #pageSizeSelect [value]="pageSize()" (change)="changePageSize(pageSizeSelect.value)">
+                <option value="8">8</option><option value="20">20</option><option value="50">50</option>
+              </select>
+            </label>
+            <button type="button" class="row-action" aria-label="Página anterior" (click)="changePage(page() - 1)" [disabled]="page() <= 1 || loading()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-left.svg#chevron-left" /></svg>
+            </button>
+            <span>Página {{ page() }} de {{ pageCount() }}</span>
+            <button type="button" class="row-action" aria-label="Próxima página" (click)="changePage(page() + 1)" [disabled]="page() >= pageCount() || loading()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  } @else if (view() === 'detail') {
+    @if (selected(); as member) {
+      <header class="members-heading">
+        <div><h1>{{ member.name }}</h1><p>Dados e vínculo com a igreja.</p></div>
+        <button type="button" class="member-button secondary" (click)="view.set('list')">Voltar</button>
+      </header>
+      <section class="member-card detail-card" aria-labelledby="detail-title">
+        <div class="detail-heading">
+          <h2 id="detail-title">Dados do membro</h2>
+          @if (canEditSelected()) {
+            <div class="detail-actions">
+              <button type="button" class="member-button secondary" (click)="openEdit()" [disabled]="catalogsLoading() || catalogError()">Editar</button>
+              <button type="button" class="member-button danger" (click)="confirmingDelete.set(true)">Excluir</button>
+            </div>
+          }
+        </div>
+        <dl class="detail-grid">
+          <div><dt>Nome</dt><dd>{{ member.name }}</dd></div>
+          <div><dt>Tipo de membro</dt><dd>{{ member.memberType.description }}</dd></div>
+          <div><dt>Situação</dt><dd>{{ statusLabels[member.status] }}</dd></div>
+          <div><dt>Telefone</dt><dd>{{ member.phone || '—' }}</dd></div>
+          <div><dt>E-mail</dt><dd>{{ member.email || '—' }}</dd></div>
+          <div><dt>Gênero</dt><dd>{{ member.gender || '—' }}</dd></div>
+          <div><dt>Nascimento</dt><dd>{{ (member.birthDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
+          <div><dt>Entrada</dt><dd>{{ (member.entryDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
+          <div><dt>Batismo</dt><dd>{{ (member.baptismDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
+          <div><dt>CEP</dt><dd>{{ member.zipCode || '—' }}</dd></div>
+          <div><dt>Rua</dt><dd>{{ member.street || '—' }}</dd></div>
+          <div><dt>Número</dt><dd>{{ member.number || '—' }}</dd></div>
+          <div><dt>Complemento</dt><dd>{{ member.complement || '—' }}</dd></div>
+          <div><dt>Bairro</dt><dd>{{ member.neighborhood || '—' }}</dd></div>
+          <div><dt>Cidade</dt><dd>{{ member.city || '—' }}</dd></div>
+          <div><dt>Estado</dt><dd>{{ member.state || '—' }}</dd></div>
+          <div><dt>Consentimento</dt><dd>{{ member.consentAt ? 'Informado' : 'Não informado' }}</dd></div>
+        </dl>
+        @if (!canEditSelected()) {
+          <p class="muted">A tesouraria pode editar e excluir apenas os membros que cadastrou.</p>
+        }
+        @if (confirmingDelete()) {
+          <div class="confirm-box" role="alert">
+            <p>Deseja excluir este membro? Esta ação não pode ser desfeita pela tela.</p>
+            <button type="button" class="member-button secondary" (click)="confirmingDelete.set(false)" [disabled]="saving()">Cancelar</button>
+            <button type="button" class="member-button danger" (click)="deleteMember()" [disabled]="saving()">Confirmar exclusão</button>
+          </div>
+        }
+      </section>
+    }
+  } @else {
+    <header class="members-heading">
+      <div><h1>{{ view() === 'edit' ? 'Editar membro' : 'Novo membro' }}</h1><p>Organize os dados pessoais e o vínculo com a igreja.</p></div>
+      <button type="button" class="member-button secondary" (click)="closeForm()" [disabled]="saving() || !!duplicates()">Voltar</button>
+    </header>
+    <app-member-form [member]="selected()" [types]="types()" [fullAccess]="fullAccess()"
+      [saving]="saving() || !!duplicates()" (save)="saveMember($event)" (cancel)="closeForm()" />
+    @if (duplicates(); as names) {
+      <div class="member-card confirm-box duplicate-box" role="alert">
+        <h2>Possível cadastro duplicado</h2>
+        <p>Encontramos dados semelhantes. Confira antes de continuar.</p>
+        @if (names.length) {
+          <ul>@for (name of names; track $index) { <li>{{ name }}</li> }</ul>
+        }
+        <button type="button" class="member-button secondary" (click)="reviewDuplicate()" [disabled]="saving()">Revisar dados</button>
+        <button type="button" class="member-button primary" (click)="confirmDuplicate()" [disabled]="saving()">Cadastrar mesmo assim</button>
+      </div>
+    }
+  }
+</div>

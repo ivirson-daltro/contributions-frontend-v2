@@ -1,0 +1,118 @@
+<form class="member-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <fieldset class="form-layout" [disabled]="saving()">
+    <section class="member-card form-card">
+      @if (step() === 1) {
+        <h2>Dados do membro</h2>
+        <p class="muted">Os campos com * são obrigatórios.</p>
+        <div class="form-grid">
+          <label class="full-width">Nome completo *
+            <input formControlName="name" maxlength="120" autocomplete="name" placeholder="Ex.: Maria de Oliveira"
+              [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+              [attr.aria-describedby]="form.controls.name.touched && form.controls.name.invalid ? 'member-name-error' : null" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="field-error" id="member-name-error">Informe o nome completo.</span>
+            }
+          </label>
+          <label>Tipo de membro *
+            <select formControlName="memberTypeId"
+              [attr.aria-invalid]="form.controls.memberTypeId.touched && form.controls.memberTypeId.invalid"
+              [attr.aria-describedby]="form.controls.memberTypeId.touched && form.controls.memberTypeId.invalid ? 'member-type-error' : null">
+              <option value="">Selecione o tipo</option>
+              @if (hasCurrentType()) {
+                <option [value]="member()!.memberType.id" disabled>{{ member()!.memberType.description }} (inativo)</option>
+              }
+              @for (type of types(); track type.id) {
+                <option [value]="type.id">{{ type.description }}</option>
+              }
+            </select>
+            @if (form.controls.memberTypeId.touched && form.controls.memberTypeId.invalid) {
+              <span class="field-error" id="member-type-error">Selecione o tipo de membro.</span>
+            }
+          </label>
+          @if (fullAccess()) {
+            <label>Situação
+              <select formControlName="status">
+                <option value="ACTIVE">Ativo</option>
+                <option value="INACTIVE">Inativo</option>
+                <option value="TRANSFERRED">Transferido</option>
+                <option value="DECEASED">Falecido</option>
+              </select>
+            </label>
+            <label>E-mail de contato
+              <input type="email" formControlName="email" maxlength="254" autocomplete="email" placeholder="nome@exemplo.com"
+                [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+                [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'member-email-error' : null" />
+              @if (form.controls.email.touched && form.controls.email.invalid) {
+                <span class="field-error" id="member-email-error">Informe um e-mail válido.</span>
+              }
+            </label>
+            <label>Telefone
+              <input type="tel" formControlName="phone" maxlength="40" autocomplete="tel" placeholder="(11) 99999-9999" />
+            </label>
+            <label>Data de nascimento <input type="date" formControlName="birthDate" /></label>
+            <label>Gênero
+              <select formControlName="gender">
+                <option value="">Não informado</option>
+                <option value="Feminino">Feminino</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Outro">Outro</option>
+                @if (form.controls.gender.value && form.controls.gender.value !== 'Feminino' && form.controls.gender.value !== 'Masculino' && form.controls.gender.value !== 'Outro') {
+                  <option [value]="form.controls.gender.value">{{ form.controls.gender.value }}</option>
+                }
+              </select>
+            </label>
+          }
+        </div>
+      } @else if (step() === 2) {
+        <h2>Endereço</h2>
+        <p class="muted">Informe o endereço de residência, se disponível.</p>
+        <div class="form-grid">
+          <label>CEP <input formControlName="zipCode" maxlength="20" autocomplete="postal-code" /></label>
+          <label>Estado <input formControlName="state" maxlength="40" autocomplete="address-level1" /></label>
+          <label class="full-width">Rua <input formControlName="street" maxlength="200" autocomplete="address-line1" /></label>
+          <label>Número <input formControlName="number" maxlength="30" /></label>
+          <label>Complemento <input formControlName="complement" maxlength="120" autocomplete="address-line2" /></label>
+          <label>Bairro <input formControlName="neighborhood" maxlength="120" /></label>
+          <label>Cidade <input formControlName="city" maxlength="120" autocomplete="address-level2" /></label>
+        </div>
+      } @else {
+        <h2>Vínculo com a igreja</h2>
+        <p class="muted">Informe as datas do vínculo, se disponíveis.</p>
+        <div class="form-grid">
+          <label>Data de entrada <input type="date" formControlName="entryDate" /></label>
+          <label>Data de batismo <input type="date" formControlName="baptismDate" /></label>
+        </div>
+        <label class="consent"><input type="checkbox" formControlName="consent" /> O membro autorizou o uso de seus dados pela igreja.</label>
+      }
+    </section>
+    <aside class="form-aside">
+      @if (fullAccess()) {
+        <div class="member-card steps-card">
+          <h2>Cadastro em 3 partes</h2>
+          <ol>
+            <li [class.current]="step() === 1">1&nbsp;&nbsp; Dados pessoais</li>
+            <li [class.current]="step() === 2">2&nbsp;&nbsp; Endereço</li>
+            <li [class.current]="step() === 3">3&nbsp;&nbsp; Igreja</li>
+          </ol>
+        </div>
+      }
+      <div class="privacy-card">
+        <h2>Cuidado também é privacidade</h2>
+        <p>Use os dados apenas para as atividades da igreja e respeite o consentimento informado.</p>
+      </div>
+    </aside>
+  </fieldset>
+  <div class="form-actions">
+    <button class="member-button secondary" type="button" (click)="cancel.emit()" [disabled]="saving()">Cancelar</button>
+    @if (fullAccess() && step() > 1) {
+      <button class="member-button secondary" type="button" (click)="step.set(step() - 1)" [disabled]="saving()">Voltar</button>
+    }
+    @if (fullAccess() && step() < 3) {
+      <button class="member-button primary" type="button" (click)="next()" [disabled]="saving()">
+        {{ step() === 1 ? 'Continuar para endereço' : 'Continuar para igreja' }}
+      </button>
+    } @else {
+      <button class="member-button primary" type="submit" [disabled]="saving()">Salvar membro</button>
+    }
+  </div>
+</form>

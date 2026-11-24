@@ -82,7 +82,7 @@ describe('SelectChurchComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/tenant', 'igreja-central']);
   });
 
-  it('should not route a non-admin membership to the tenant dashboard', async () => {
+  it('routes a treasurer directly to members instead of the admin dashboard', async () => {
     authService.getCurrentUser.mockResolvedValue({
       user: { id: 'user-id', email: 'member@example.com', displayName: 'Member' },
       memberships: [
@@ -103,15 +103,28 @@ describe('SelectChurchComponent', () => {
     await vi.waitFor(() => expect(authService.getCurrentUser).toHaveBeenCalledWith('access-token'));
     fixture.detectChanges();
 
+    expect(navigate).toHaveBeenCalledWith(['/tenant', 'igreja-central', 'members']);
+  });
+
+  it('does not open management for a membership without an allowed role', async () => {
+    authService.getCurrentUser.mockResolvedValue({
+      user: { id: 'user-id', email: 'member@example.com', displayName: 'Member' },
+      memberships: [{ tenantId: 'tenant-id', slug: 'igreja-central', name: 'Igreja Central', status: 'ACTIVE', roles: ['FISCAL'] }],
+    });
+    const fixture = TestBed.createComponent(SelectChurchComponent);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('input[type="radio"]')).not.toBeNull();
+    });
     element.querySelector<HTMLInputElement>('input[type="radio"]')!.click();
     fixture.detectChanges();
     element.querySelector<HTMLButtonElement>('button')!.click();
-    fixture.detectChanges();
-
     expect(navigate).not.toHaveBeenCalled();
-    expect(TestBed.inject(ToastService).toasts().map((toast) => toast.message).join(' '))
-      .toContain('apenas para administradores');
+    expect(TestBed.inject(ToastService).toasts().some((toast) => toast.message.includes('não está disponível'))).toBe(true);
   });
 
   it('should return to login when there are no active church memberships', async () => {

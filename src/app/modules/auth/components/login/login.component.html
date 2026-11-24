@@ -68,9 +68,16 @@
         }
       </div>
 
-      <a class="text-button forgot-link" routerLink="/forgot-password">
-        Esqueci minha senha
-      </a>
+      <div class="login-options">
+        <label class="remember-email">
+          <input #rememberEmail type="checkbox" formControlName="rememberEmail"
+            (change)="onRememberEmailChange(rememberEmail.checked)" />
+          <span>Lembrar e-mail</span>
+        </label>
+        <a class="text-button forgot-link" routerLink="/forgot-password">
+          Esqueci minha senha
+        </a>
+      </div>
 
       <button class="submit-button" type="submit" [disabled]="isSubmitting()">
         <span>Entrar</span>

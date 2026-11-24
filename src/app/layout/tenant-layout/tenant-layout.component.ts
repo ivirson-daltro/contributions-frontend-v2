@@ -11,6 +11,7 @@ import { AuthService } from '../../core/auth/services/auth.service';
 import { TenantContextService } from '../../core/tenant/services/tenant-context.service';
 import { ThemeService } from '../../core/theme/theme.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { canManageMembers } from '../../core/tenant/tenant-access';
 
 type TenantView = 'loading' | 'ready' | 'error' | 'denied';
 
@@ -48,28 +49,38 @@ export class TenantLayoutComponent implements OnInit {
   }
 
   protected async retryAccess(): Promise<void> {
+    const validationRequest = this.context.beginValidation();
+    const slug = this.tenantSlug;
     this.view.set('loading');
     this.feedback.set('');
     try {
       const accessToken = await this.authService.getAccessToken();
+      if (!this.context.isCurrentValidation(validationRequest) || this.destroyRef.destroyed) return;
       if (!accessToken) {
         await this.router.navigate(['/login']);
         return;
       }
       const profile = await this.authService.getCurrentUser(accessToken);
+      if (!this.context.isCurrentValidation(validationRequest) || this.destroyRef.destroyed) return;
       const membership = profile.memberships.find(
-        (item) => item.slug === this.tenantSlug && item.status === 'ACTIVE',
+        (item) => item.slug === slug && item.status === 'ACTIVE',
       );
-      if (!membership || !membership.roles.includes('TENANT_ADMIN')) {
+      const allowed = membership && (this.route.snapshot.data['memberAccess']
+        ? canManageMembers(membership.roles)
+        : membership.roles.includes('TENANT_ADMIN'));
+      if (!membership || !allowed) {
+        this.context.current.set(null);
+        this.context.displayName.set('');
         this.context.status.set('denied');
         this.syncContext();
         return;
       }
-      this.context.current.set({ accessToken, membership });
+      this.context.current.set({ accessToken, userId: profile.user.id, membership });
       this.context.displayName.set(profile.user.displayName || profile.user.email || 'Administrador');
       this.context.status.set('ready');
       this.syncContext();
     } catch {
+      if (!this.context.isCurrentValidation(validationRequest) || this.destroyRef.destroyed) return;
       this.context.status.set('error');
       this.syncContext();
     }

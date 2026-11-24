@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { TenantMembership } from '../../../../core/auth/dtos/tenant-membership.dto';
 import { ToastService } from '../../../../core/ui/toast.service';
+import { canManageMembers } from '../../../../core/tenant/tenant-access';
 
 @Component({
   imports: [RouterLink],
@@ -27,12 +28,12 @@ export class SelectChurchComponent implements OnInit {
     const membership = this.memberships().find((item) => item.tenantId === this.selectedTenantId());
     if (!membership) return;
 
-    if (!membership.roles.includes('TENANT_ADMIN')) {
-      this.toast.warning('A área de gestão está disponível apenas para administradores da igreja.');
+    if (!canManageMembers(membership.roles)) {
+      this.toast.warning('A área de gestão não está disponível para seu perfil.');
       return;
     }
 
-    void this.router.navigate(['/tenant', membership.slug]);
+    void this.router.navigate(this.destination(membership));
   }
 
   private async loadMemberships(): Promise<void> {
@@ -53,13 +54,19 @@ export class SelectChurchComponent implements OnInit {
       }
       this.memberships.set(memberships);
 
-      if (memberships.length === 1 && memberships[0].roles.includes('TENANT_ADMIN')) {
-        await this.router.navigate(['/tenant', memberships[0].slug]);
+      if (memberships.length === 1 && canManageMembers(memberships[0].roles)) {
+        await this.router.navigate(this.destination(memberships[0]));
       }
     } catch {
       this.toast.error('Não foi possível carregar suas igrejas. Tente novamente.');
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private destination(membership: TenantMembership): string[] {
+    return membership.roles.includes('TENANT_ADMIN')
+      ? ['/tenant', membership.slug]
+      : ['/tenant', membership.slug, 'members'];
   }
 }

@@ -66,12 +66,20 @@ project URL and its public publishable key in
 values are exposed to the browser and must not be used for privileged
 operations; never put a `service_role` key in the frontend.
 
+On the login screen, users can opt to remember their email in the current
+browser. It is saved after successful authentication and removed when the
+option is unchecked; the option does not store passwords.
+
 Password recovery uses Supabase Auth and redirects to `/reset-password` on the
 current origin. Add the exact recovery URL for each deployed origin (and local
 development, if used) to the Supabase Auth redirect allow list. The default
 Supabase recovery email template must redirect back to the application.
 Recovery links use Supabase's default implicit flow. After a successful callback,
 the URL is cleared; refreshing the reset page requires requesting a new link.
+Supabase Auth limits recovery email requests; configure a custom SMTP provider
+and appropriate Auth rate limits for production. See
+[Supabase rate limits](https://supabase.com/docs/guides/auth/rate-limits) and
+[custom SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp).
 
 Development builds use `http://localhost:3000/v1` from
 `src/environments/environment.ts`. Production builds replace that file with
@@ -94,8 +102,8 @@ storage; it remains in the link and is sent only to the invitation API.
 
 Shared authentication infrastructure lives in `src/app/core/auth`, while the
 authentication layout lives in `src/app/layout`. Feature code is organized by
-domain under `src/app/modules`: `auth`, `memberships`, `dashboard`, and
-`platform`, as well as `contributions`. Each feature keeps components, services, and DTOs in separate
+domain under `src/app/modules`: `auth`, `memberships`, `dashboard`, `platform`,
+`contributions`, and `members`. Each feature keeps components, services, and DTOs in separate
 directories; tests stay alongside the files they cover.
 
 The tenant contribution page lists and filters records, creates and edits contributions,
@@ -111,6 +119,14 @@ from `/members/all` and filter names locally.
 It also downloads a PDF report for a selected period of up to 366 inclusive days.
 The report includes all active contributions in that period, regardless of the
 other list filters. Attachment uploads remain unavailable.
+
+The members page at `/tenant/:slug/members` uses the tenant member and member-type
+catalog APIs for filtering, pagination, details, creation, partial updates, and
+logical deletion. Treasurer users can create members with only name and type and
+can edit or delete only records they created; secretaries and tenant admins can
+manage all member fields. The API remains responsible for enforcing permissions.
+Possible duplicates require explicit confirmation before retrying creation.
+CSV import and a contributors tab are not available in the current API.
 
 The tenant layout validates access and hosts lazy-loaded child routes for the
 overview (`/tenant/:slug`) and contributions (`/tenant/:slug/contributions`).

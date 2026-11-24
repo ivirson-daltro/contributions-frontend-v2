@@ -72,6 +72,27 @@ export const routes: Routes = [
     title: 'Selecionar igreja | IBG Gestão',
   },
   {
+    path: 'tenant/:slug/members',
+    canActivate: [authenticatedGuard, mfaGuard, tenantAdminGuard],
+    data: { memberAccess: true },
+    loadComponent: () =>
+      import('./layout/tenant-layout/tenant-layout.component').then(
+        (module) => module.TenantLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./modules/members/components/members-page/members-page.component').then(
+            (module) => module.MembersPageComponent,
+          ),
+        data: { breadcrumb: 'Membros' },
+        title: 'Membros | IBG Gestão',
+      },
+    ],
+  },
+  {
     path: 'tenant/:slug',
     canActivate: [authenticatedGuard, mfaGuard, tenantAdminGuard],
     loadComponent: () =>

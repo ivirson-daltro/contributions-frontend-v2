@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PlatformService } from '../../../platform/services/platform.service';
 import { ToastService } from '../../../../core/ui/toast.service';
+import { RememberedEmailService } from '../../services/remembered-email.service';
 
 @Component({
   host: { style: 'display: contents' },
@@ -17,6 +18,7 @@ export class LoginComponent {
   private readonly platformService = inject(PlatformService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly rememberedEmail = inject(RememberedEmailService);
 
   protected readonly passwordVisible = signal(false);
   protected readonly isSubmitting = signal(false);
@@ -30,7 +32,17 @@ export class LoginComponent {
       nonNullable: true,
       validators: [Validators.required],
     }),
+    rememberEmail: new FormControl(false, { nonNullable: true }),
   });
+
+  constructor() {
+    try {
+      const email = this.rememberedEmail.get();
+      if (email) this.form.patchValue({ email, rememberEmail: true });
+    } catch {
+      this.toast.warning('Não foi possível carregar o e-mail salvo neste navegador.');
+    }
+  }
 
   protected async submit(): Promise<void> {
     this.form.markAllAsTouched();
@@ -42,15 +54,15 @@ export class LoginComponent {
     this.isSubmitting.set(true);
 
     try {
-      const error = await this.authService.signIn(
-        this.form.controls.email.value.trim(),
-        this.form.controls.password.value,
-      );
+      const email = this.form.controls.email.value.trim();
+      const error = await this.authService.signIn(email, this.form.controls.password.value);
 
       if (error) {
         this.toast.error('E-mail ou senha inválidos.');
         return;
       }
+
+      this.persistEmailPreference(email);
 
       const accessToken = await this.authService.getAccessToken();
       if (!accessToken) {
@@ -74,6 +86,28 @@ export class LoginComponent {
       );
     } finally {
       this.isSubmitting.set(false);
+    }
+  }
+
+  protected onRememberEmailChange(checked: boolean): void {
+    if (!checked) this.clearRememberedEmail();
+  }
+
+  private persistEmailPreference(email: string): void {
+    if (!this.form.controls.rememberEmail.value) return;
+
+    try {
+      this.rememberedEmail.save(email);
+    } catch {
+      this.toast.warning('Não foi possível salvar o e-mail neste navegador.');
+    }
+  }
+
+  private clearRememberedEmail(): void {
+    try {
+      this.rememberedEmail.clear();
+    } catch {
+      this.toast.warning('Não foi possível remover o e-mail salvo neste navegador.');
     }
   }
 

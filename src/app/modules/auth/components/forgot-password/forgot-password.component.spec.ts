@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { AuthApiError } from '@supabase/supabase-js';
 import { vi } from 'vitest';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { ToastService } from '../../../../core/ui/toast.service';
@@ -48,5 +49,27 @@ describe('ForgotPasswordComponent', () => {
     await fixture.whenStable();
     expect(element.querySelector('[role="status"]')).toBeNull();
     expect(TestBed.inject(ToastService).toasts().some((toast) => toast.type === 'error')).toBe(true);
+  });
+
+  it('explains rate limiting without showing a success message', async () => {
+    auth.requestPasswordReset.mockRejectedValue(
+      new AuthApiError('email rate limit exceeded', 429, 'over_email_send_rate_limit'),
+    );
+    const fixture = TestBed.createComponent(ForgotPasswordComponent);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#recovery-email')!;
+    input.value = 'user@example.com';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+
+    expect(element.querySelector('[role="status"]')).toBeNull();
+    expect(TestBed.inject(ToastService).toasts()).toEqual(
+      expect.arrayContaining([expect.objectContaining({
+        type: 'warning',
+        message: 'Muitas solicitações de recuperação. Aguarde e tente novamente mais tarde.',
+      })]),
+    );
   });
 });

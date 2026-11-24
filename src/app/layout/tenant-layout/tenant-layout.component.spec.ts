@@ -7,6 +7,7 @@ import { routes } from '../../app.routes';
 import { AuthService } from '../../core/auth/services/auth.service';
 import { ContributionsService } from '../../modules/contributions/services/contributions.service';
 import { TenantDashboardService } from '../../modules/dashboard/services/tenant-dashboard.service';
+import { MembersService } from '../../modules/members/services/members.service';
 
 describe('Tenant routes', () => {
   const membership = {
@@ -23,6 +24,7 @@ describe('Tenant routes', () => {
     signOut: vi.fn(),
   };
   const dashboard = { getSummary: vi.fn(), getSeries: vi.fn() };
+  const members = { list: vi.fn(), listTypes: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
   const contributions = {
     list: vi.fn(),
     listTypes: vi.fn(),
@@ -35,7 +37,7 @@ describe('Tenant routes', () => {
     window.localStorage.removeItem('ibg.dashboard.theme');
     auth.getAccessToken.mockReset().mockResolvedValue('token');
     auth.getCurrentUser.mockReset().mockResolvedValue({
-      user: { displayName: 'Admin', email: 'admin@example.com' },
+      user: { id: 'user-id', displayName: 'Admin', email: 'admin@example.com' },
       memberships: [membership],
     });
     auth.getTotpFactorStatus.mockReset().mockResolvedValue({
@@ -70,6 +72,8 @@ describe('Tenant routes', () => {
     contributions.listMethods
       .mockReset()
       .mockResolvedValue([{ id: 'method', description: 'Pix', kind: 'PIX' }]);
+    members.list.mockReset().mockResolvedValue({ data: [], meta: { page: 1, pageSize: 8, total: 0 } });
+    members.listTypes.mockReset().mockResolvedValue([{ id: 'type', description: 'Membro' }]);
 
     TestBed.configureTestingModule({
       providers: [
@@ -78,6 +82,7 @@ describe('Tenant routes', () => {
         { provide: AuthService, useValue: auth },
         { provide: TenantDashboardService, useValue: dashboard },
         { provide: ContributionsService, useValue: contributions },
+        { provide: MembersService, useValue: members },
       ],
     });
   });
@@ -196,12 +201,124 @@ describe('Tenant routes', () => {
     expect(dashboard.getSummary).not.toHaveBeenCalled();
   });
 
+    it.each(['TREASURER', 'SECRETARY', 'TENANT_ADMIN'])('opens members directly for %s', async (role) => {
+      auth.getCurrentUser.mockResolvedValue({
+        user: { id: 'user-id', displayName: 'User' },
+        memberships: [{ ...membership, roles: [role] }],
+      });
+      const harness = await RouterTestingHarness.create('/tenant/igreja-central/members');
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(members.list).toHaveBeenCalledWith('token', 'tenant-id', expect.objectContaining({ page: 1 }));
+      });
+      expect(harness.routeNativeElement?.textContent).toContain('Nenhum membro encontrado');
+      if (role !== 'TENANT_ADMIN') {
+        expect(harness.routeNativeElement?.textContent).not.toContain('Contribuições');
+      }
+      expect(dashboard.getSummary).not.toHaveBeenCalled();
+    });
+
+    it('denies access to members for an unauthorized role', async () => {
+      auth.getCurrentUser.mockResolvedValue({
+        user: { id: 'user-id', displayName: 'User' },
+        memberships: [{ ...membership, roles: ['FISCAL'] }],
+      });
+      const harness = await RouterTestingHarness.create('/tenant/igreja-central/members');
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(harness.routeNativeElement?.textContent).toContain('perfis autorizados');
+      });
+      expect(members.list).not.toHaveBeenCalled();
+    });
+
+    it('retries member access with the member-specific permissions', async () => {
+      auth.getCurrentUser.mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValue({
+        user: { id: 'user-id', displayName: 'Treasurer' },
+        memberships: [{ ...membership, roles: ['TREASURER'] }],
+      });
+      const harness = await RouterTestingHarness.create('/tenant/igreja-central/members');
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(harness.routeNativeElement?.textContent).toContain('Não foi possível validar seu acesso');
+      });
+      harness.routeNativeElement!.querySelector<HTMLButtonElement>('.dashboard-state button')!.click();
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(members.list).toHaveBeenCalledWith('token', 'tenant-id', expect.anything());
+      });
+    });
+
   it('redirects an unauthenticated visitor without loading a tenant page', async () => {
     auth.getAccessToken.mockResolvedValue(null);
     await RouterTestingHarness.create('/tenant/igreja-central/contributions');
     await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/login'));
     expect(auth.getCurrentUser).not.toHaveBeenCalled();
     expect(contributions.list).not.toHaveBeenCalled();
+  });
+
+  it('switches between the admin pages and members without losing access', async () => {
+    const harness = await RouterTestingHarness.create('/tenant/igreja-central');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(dashboard.getSummary).toHaveBeenCalled();
+    });
+    await harness.navigateByUrl('/tenant/igreja-central/members');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(members.list).toHaveBeenCalledWith('token', 'tenant-id', expect.anything());
+    });
+    await harness.navigateByUrl('/tenant/igreja-central/contributions');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(contributions.list).toHaveBeenCalledWith('token', 'tenant-id', expect.anything());
+    });
+  });
+
+  it('validates the new church before loading its members', async () => {
+    auth.getCurrentUser.mockResolvedValue({
+      user: { id: 'user-id', displayName: 'Secretary' },
+      memberships: [
+        { ...membership, roles: ['SECRETARY'] },
+        { ...membership, tenantId: 'tenant-two', slug: 'outra-igreja', name: 'Outra Igreja', roles: ['SECRETARY'] },
+      ],
+    });
+    const harness = await RouterTestingHarness.create('/tenant/igreja-central/members');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(members.list).toHaveBeenCalledWith('token', 'tenant-id', expect.anything());
+    });
+    await harness.navigateByUrl('/tenant/outra-igreja/members');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(members.list).toHaveBeenCalledWith('token', 'tenant-two', expect.anything());
+    });
+    expect(harness.routeNativeElement?.textContent).toContain('Outra Igreja');
+  });
+
+  it('ignores a retry response from a previously selected church', async () => {
+    let resolveRetry!: (value: unknown) => void;
+    const second = { ...membership, tenantId: 'tenant-two', slug: 'outra-igreja', name: 'Outra Igreja', roles: ['SECRETARY'] };
+    auth.getCurrentUser
+      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveRetry = resolve; }))
+      .mockResolvedValue({ user: { id: 'user-id', displayName: 'Secretary' }, memberships: [second] });
+    const harness = await RouterTestingHarness.create('/tenant/igreja-central/members');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(harness.routeNativeElement?.textContent).toContain('Não foi possível validar seu acesso');
+    });
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('.dashboard-state button')!.click();
+    await vi.waitFor(() => expect(auth.getCurrentUser).toHaveBeenCalledTimes(2));
+    await harness.navigateByUrl('/tenant/outra-igreja/members');
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(members.list).toHaveBeenCalledWith('token', 'tenant-two', expect.anything());
+    });
+    resolveRetry({ user: { id: 'user-id', displayName: 'Secretary' }, memberships: [{ ...membership, roles: ['SECRETARY'] }] });
+    await Promise.resolve();
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Outra Igreja');
+    expect(members.list).not.toHaveBeenCalledWith('token', 'tenant-id', expect.anything());
   });
 
   it('validates a different church before loading its contribution data', async () => {
