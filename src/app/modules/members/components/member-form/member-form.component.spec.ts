@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { vi } from 'vitest';
 import { Member } from '../../dtos/member.dto';
 import { MemberFormComponent } from './member-form.component';
@@ -37,7 +39,10 @@ describe('MemberFormComponent', () => {
   }
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [MemberFormComponent] });
+    TestBed.configureTestingModule({
+      imports: [MemberFormComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     save.mockReset();
   });
 
@@ -62,6 +67,44 @@ describe('MemberFormComponent', () => {
       payload: { name: 'Ana Maria', memberTypeId: 'inactive' },
       changes: { name: 'Ana Maria' },
     });
+  });
+
+  it('formats phone and ZIP code as the user types', () => {
+    const element = setup(true);
+    setValue(element, 'name', 'Ana');
+    setValue(element, 'memberTypeId', 'type');
+    setValue(element, 'phone', '11987654321');
+    expect((element.querySelector('[formControlName="phone"]') as HTMLInputElement).value)
+      .toBe('(11) 9 8765-4321');
+    submit(element);
+    setValue(element, 'zipCode', '50000000');
+    expect((element.querySelector('[formControlName="zipCode"]') as HTMLInputElement).value)
+      .toBe('50000-000');
+  });
+
+  it('loads the address through ViaCEP after entering a complete CEP', async () => {
+    const element = setup(true);
+    setValue(element, 'name', 'Ana');
+    setValue(element, 'memberTypeId', 'type');
+    submit(element);
+    setValue(element, 'zipCode', '50000000');
+
+    const http = TestBed.inject(HttpTestingController);
+    const request = http.expectOne('https://viacep.com.br/ws/50000000/json/');
+    request.flush({
+      logradouro: 'Rua da Aurora',
+      bairro: 'Boa Vista',
+      localidade: 'Recife',
+      uf: 'PE',
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((element.querySelector('[formControlName="street"]') as HTMLInputElement).value).toBe('Rua da Aurora');
+    expect((element.querySelector('[formControlName="neighborhood"]') as HTMLInputElement).value).toBe('Boa Vista');
+    expect((element.querySelector('[formControlName="city"]') as HTMLInputElement).value).toBe('Recife');
+    expect((element.querySelector('[formControlName="state"]') as HTMLInputElement).value).toBe('PE');
+    http.verify();
   });
 
   it('advances through all steps before sending complete data and consent', () => {

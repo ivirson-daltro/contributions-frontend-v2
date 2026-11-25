@@ -6,6 +6,60 @@ table td.table-actions {
   text-align: center;
 }
 
+table thead th {
+  height: 44px;
+  background: #f5f6fa;
+  color: #737b96;
+  font-size: 0.625rem;
+  font-weight: 500;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.dark-theme table thead th {
+  background: #30364a;
+  color: #c1c5d4;
+  border-color: #454c63;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']),
+select,
+textarea {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e1e4ed;
+  border-radius: 5px;
+  background: #fff;
+  color: #30354a;
+  font: inherit;
+  font-size: 0.6875rem;
+}
+
+textarea {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #a99eff;
+  outline-offset: 2px;
+  border-color: #6251df;
+}
+
+.dark-theme input:not([type='checkbox']):not([type='radio']):not([type='file']),
+.dark-theme select,
+.dark-theme textarea {
+  border-color: #4c5571;
+  background: #202435;
+  color: #f3f2fa;
+}
+
 :root {
   color-scheme: light;
   font-size: 110%;

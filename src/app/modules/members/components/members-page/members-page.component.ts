@@ -1,32 +1,53 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs';
 import { TenantContextService } from '../../../../core/tenant/services/tenant-context.service';
 import { canManageAllMemberFields } from '../../../../core/tenant/tenant-access';
+import { canManageMembers } from '../../../../core/tenant/tenant-access';
 import { ToastService } from '../../../../core/ui/toast.service';
 import { Member, MemberList, MemberPayload, MemberStatus, MemberStatusFilter, MemberSummary, MemberType } from '../../dtos/member.dto';
 import { MembersService } from '../../services/members.service';
 import { MemberFormComponent, MemberFormSubmission } from '../member-form/member-form.component';
+import { MemberSelectComponent } from '../../../../shared/components/member-select/member-select.component';
+import { MemberLookup } from '../../../../shared/dtos/member-lookup.dto';
+import { formatPhoneMask } from '../../../../shared/utils/phone-mask';
 
 type MembersView = 'list' | 'detail' | 'create' | 'edit';
 
 @Component({
   selector: 'app-members-page',
-  imports: [DatePipe, ReactiveFormsModule, MemberFormComponent],
+  imports: [DatePipe, ReactiveFormsModule, MemberFormComponent, MemberSelectComponent],
   templateUrl: './members-page.component.html',
   styleUrl: './members-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MembersPageComponent implements OnInit {
+  private readonly memberForm = viewChild.required(MemberFormComponent);
+  private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('memberDetailDialog');
   private readonly context = inject(TenantContextService);
   private readonly service = inject(MembersService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private listRequest = 0;
   private pendingCreate: MemberPayload | null = null;
+  private membersRequest: Promise<MemberLookup[]> | null = null;
+  protected readonly loadMembers = (): Promise<MemberLookup[]> => {
+    const tenant = this.tenant();
+    if (!tenant) return Promise.resolve([]);
+    if (!this.membersRequest) {
+      this.membersRequest = this.service.listAll(
+        tenant.accessToken,
+        tenant.membership.tenantId,
+      ).catch((error: unknown) => {
+        this.membersRequest = null;
+        throw error;
+      });
+    }
+    return this.membersRequest;
+  };
 
   protected readonly tenant = this.context.current;
   protected readonly fullAccess = computed(() => canManageAllMemberFields(this.tenant()?.membership.roles ?? []));
@@ -55,6 +76,7 @@ export class MembersPageComponent implements OnInit {
   protected readonly statusLabels: Record<MemberStatus, string> = {
     ACTIVE: 'Ativo', INACTIVE: 'Inativo', TRANSFERRED: 'Transferido', DECEASED: 'Falecido',
   };
+  protected readonly formatPhone = formatPhoneMask;
   protected readonly filters = new FormGroup({
     q: new FormControl('', { nonNullable: true }),
     memberTypeId: new FormControl('', { nonNullable: true }),
@@ -75,6 +97,7 @@ export class MembersPageComponent implements OnInit {
       this.confirmingDelete.set(false);
       this.pendingCreate = null;
       this.duplicates.set(null);
+      this.membersRequest = null;
       this.filters.reset({ q: '', memberTypeId: '', status: 'ACTIVE' }, { emitEvent: false });
       void this.loadTypes();
       void this.loadList();
@@ -158,7 +181,7 @@ export class MembersPageComponent implements OnInit {
       if (this.tenant() !== tenant) return;
       this.selected.set(member);
       this.confirmingDelete.set(false);
-      this.view.set('detail');
+      queueMicrotask(() => this.openDetailDialog());
     } catch (error) {
       if (this.tenant() !== tenant) return;
       this.toast.error(this.errorMessage(error, 'consultar'));
@@ -170,18 +193,57 @@ export class MembersPageComponent implements OnInit {
   protected openCreate(): void {
     if (this.catalogsLoading() || this.catalogError() || this.types().length === 0) return;
     this.selected.set(null);
-    this.view.set('create');
+    this.memberForm().open(null);
+  }
+
+  protected canEditSummary(member: MemberSummary): boolean {
+    void member;
+    return canManageMembers(this.tenant()?.membership.roles ?? []);
   }
 
   protected openEdit(): void {
     if (!this.canEditSelected() || this.catalogsLoading() || this.catalogError()) return;
-    this.view.set('edit');
+    this.closeDetailDialog();
+    this.memberForm().open(this.selected());
+  }
+
+  protected async openEditFromList(item: MemberSummary): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant) return;
+    try {
+      const member = await this.service.get(tenant.accessToken, tenant.membership.tenantId, item.id);
+      this.selected.set(member);
+      if (this.canEditSelected()) this.memberForm().open(member);
+    } catch (error) {
+      this.toast.error(this.errorMessage(error, 'consultar'));
+    }
+  }
+
+  protected async deleteFromList(item: MemberSummary): Promise<void> {
+    await this.openMember(item);
+    if (this.canEditSelected()) this.confirmingDelete.set(true);
+  }
+
+  private openDetailDialog(): void {
+    const dialog = this.detailDialog()?.nativeElement;
+    if (!dialog) return;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  }
+
+  protected closeDetailDialog(): void {
+    const dialog = this.detailDialog()?.nativeElement;
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') dialog.close();
+    dialog.removeAttribute('open');
+    this.confirmingDelete.set(false);
+    this.view.set('list');
   }
 
   protected closeForm(): void {
     this.pendingCreate = null;
     this.duplicates.set(null);
-    this.view.set(this.selected() ? 'detail' : 'list');
+    this.view.set('list');
   }
 
   protected async saveMember(submission: MemberFormSubmission): Promise<void> {
@@ -243,9 +305,11 @@ export class MembersPageComponent implements OnInit {
     try {
       await this.service.delete(tenant.accessToken, tenant.membership.tenantId, member.id);
       if (this.tenant() !== tenant) return;
+      this.refreshMemberLookup();
       this.toast.success('Membro excluído.');
       this.selected.set(null);
       this.confirmingDelete.set(false);
+      this.closeDetailDialog();
       this.view.set('list');
       await this.loadList();
     } catch (error) {
@@ -259,10 +323,27 @@ export class MembersPageComponent implements OnInit {
   private finishSave(member: Member, message: string): void {
     this.pendingCreate = null;
     this.duplicates.set(null);
+    this.refreshMemberLookup();
     this.selected.set(member);
-    this.view.set('detail');
+    this.memberForm().close();
+    this.view.set('list');
     this.toast.success(message);
     void this.loadList();
+  }
+
+  private refreshMemberLookup(): void {
+    const tenant = this.tenant();
+    if (!tenant) {
+      this.membersRequest = null;
+      return;
+    }
+    this.membersRequest = this.service.listAll(
+      tenant.accessToken,
+      tenant.membership.tenantId,
+    ).catch(() => {
+      this.membersRequest = null;
+      return [];
+    });
   }
 
   private errorCode(error: unknown): string | null {

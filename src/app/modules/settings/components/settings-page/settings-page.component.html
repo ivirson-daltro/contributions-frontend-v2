@@ -1,0 +1,526 @@
+<section class="settings-page">
+  <header>
+    <h1>Configurações</h1>
+    <p>Gerencie os dados e as preferências da igreja.</p>
+    @if (tab() === 'church') {
+      <button type="button" class="primary" (click)="saveChurch()" [disabled]="saving()">
+        Salvar alterações
+      </button>
+    }
+  </header>
+
+  @if (loading()) {
+    <p role="status">Carregando configurações...</p>
+  } @else if (failed()) {
+    <div role="alert" class="panel">
+      <p>Não foi possível carregar as configurações.</p>
+      <button type="button" (click)="load()">Tentar novamente</button>
+    </div>
+  } @else {
+    <nav class="tabs" aria-label="Seções de configurações">
+      <button type="button" [class.active]="tab() === 'church'" (click)="tab.set('church')">
+        Igreja
+      </button>
+      <button
+        type="button"
+        [class.active]="tab() === 'preferences'"
+        (click)="tab.set('preferences')"
+      >
+        Preferências
+      </button>
+      <button type="button" [class.active]="tab() === 'catalogs'" (click)="tab.set('catalogs')">
+        Catálogos
+      </button>
+      <button type="button" [class.active]="tab() === 'fees'" (click)="tab.set('fees')">
+        Taxas associativas
+      </button>
+    </nav>
+
+    @if (tab() === 'church') {
+      <div class="settings-church-layout">
+        <div class="settings-church-main">
+          <form class="panel" #churchForm="ngForm" (ngSubmit)="saveChurch()">
+            <h2>Dados da igreja</h2>
+            <p>Estas informações aparecem nos seus relatórios.</p>
+            <div class="grid">
+              <label
+                >Nome da igreja *
+                <input
+                  name="name"
+                  [(ngModel)]="church.name"
+                  required
+                  minlength="2"
+                  maxlength="120"
+                />
+              </label>
+              <label
+                >CNPJ
+                <input
+                  name="document"
+                  [(ngModel)]="church.document"
+                  maxlength="18"
+                  inputmode="numeric"
+                  placeholder="00.000.000/0000-00"
+                  (ngModelChange)="church.document = formatCnpj($event)"
+                />
+              </label>
+            </div>
+            <button class="primary" type="submit" [disabled]="saving() || churchForm.invalid">
+              Salvar dados
+            </button>
+          </form>
+
+          <section class="panel">
+            <h2>Logo da igreja</h2>
+            <p>
+              A imagem aparece no canto superior esquerdo do painel. PNG, JPEG ou WebP, até 2 MB.
+            </p>
+            <p class="logo-theme-help">
+              Anexe uma logo para o modo claro e outra para o modo escuro. Se nenhuma logo escura
+              for anexada, a logo clara será usada nos dois temas.
+            </p>
+            <div class="logo-theme-editors">
+              <div class="logo-editor">
+                <strong>Modo claro</strong>
+                @if (logoStates().LIGHT === 'loading') {
+                  <span role="status">Carregando logo...</span>
+                } @else if (logoStates().LIGHT === 'error') {
+                  <span role="alert">Não foi possível carregar a logo.</span>
+                } @else if (lightLogoPreview(); as preview) {
+                  <img class="logo-preview" [src]="preview" alt="Prévia da logo no modo claro" />
+                } @else {
+                  <div class="logo-placeholder" aria-label="Nenhuma logo clara configurada">
+                    ibg
+                  </div>
+                }
+                <label class="file-label"
+                  >Selecionar logo clara
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    [disabled]="saving()"
+                    (change)="uploadLogo($event, 'LIGHT')"
+                  />
+                </label>
+              </div>
+              <div class="logo-editor">
+                <strong>Modo escuro</strong>
+                @if (logoStates().DARK === 'loading') {
+                  <span role="status">Carregando logo...</span>
+                } @else if (logoStates().DARK === 'error') {
+                  <span role="alert">Não foi possível carregar a logo.</span>
+                } @else if (darkLogoPreview(); as preview) {
+                  <img
+                    class="logo-preview dark-preview"
+                    [src]="preview"
+                    alt="Prévia da logo no modo escuro"
+                  />
+                } @else if (logoStates().DARK === 'missing') {
+                  @if (lightLogoPreview(); as preview) {
+                    <img
+                      class="logo-preview dark-preview"
+                      [src]="preview"
+                      alt="Prévia da logo clara no modo escuro"
+                    />
+                  }
+                  <span>Sem logo escura: a logo clara será usada.</span>
+                }
+                <label class="file-label"
+                  >Selecionar logo escura
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    [disabled]="saving()"
+                    (change)="uploadLogo($event, 'DARK')"
+                  />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel export-panel">
+            <h2>Seus dados, sempre com você</h2>
+            <p>
+              Exporte os cadastros e históricos da igreja em CSV. Você poderá incluir ou excluir
+              membros em um link seguro por e-mail.
+            </p>
+            <button type="button" class="export-button" disabled>
+              <span aria-hidden="true">⇩</span> Solicitar exportação
+            </button>
+            <small>O link para download fica disponível por 24 horas.</small>
+          </section>
+        </div>
+        <aside class="settings-church-aside">
+          <section class="panel">
+            <svg class="settings-card-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <use href="icons/shield-check.svg#shield-check" />
+            </svg>
+            <h2>Proteção dos acessos</h2>
+            <p>Verificação em duas etapas obrigatória para os seguintes perfis:</p>
+            <div class="access-badges">
+              <span [class.active]="hasMfaRole('TENANT_ADMIN')">Administrador</span>
+              <span [class.active]="hasMfaRole('TREASURER')">Tesouraria</span>
+            </div>
+            <button type="button" class="text-button" (click)="tab.set('preferences')">
+              Gerenciar configurações de segurança
+            </button>
+          </section>
+          <section class="panel">
+            <h2>Regras da operação</h2>
+            <dl class="settings-rules">
+              <div>
+                <dt>Permitir datas futuras</dt>
+                <dd>{{ preferences.allowFutureDates ? 'Ativado' : 'Desativado' }}</dd>
+              </div>
+              <div>
+                <dt>Reabrir meses em cascata</dt>
+                <dd>{{ preferences.cascadeReopen ? 'Ativado' : 'Desativado' }}</dd>
+              </div>
+              <div>
+                <dt>Alerta antecipado</dt>
+                <dd>{{ preferences.payableAlertDays }} dias</dd>
+              </div>
+              <div>
+                <dt>Anexos por lançamento</dt>
+                <dd>até {{ preferences.attachmentMaxFiles }} arquivos</dd>
+              </div>
+            </dl>
+            <button type="button" class="text-button" (click)="tab.set('preferences')">
+              Precisa alterar alguma? Ajustar preferências
+            </button>
+          </section>
+          <section class="panel cancellation-panel">
+            <h2>Precisa encerrar a conta?</h2>
+            <p>
+              Solicite o cancelamento da igreja. Nossa equipe analisará o pedido antes da exclusão
+              dos dados.
+            </p>
+            @if (cancellationFormOpen()) {
+              <label
+                >Motivo do cancelamento
+                <textarea
+                  name="cancellationReason"
+                  [(ngModel)]="cancellationReason"
+                  minlength="5"
+                  maxlength="500"
+                  rows="4"
+                ></textarea>
+              </label>
+              <div class="actions">
+                <button
+                  type="button"
+                  (click)="cancellationFormOpen.set(false)"
+                  [disabled]="saving()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="danger"
+                  (click)="requestCancellation()"
+                  [disabled]="saving()"
+                >
+                  Solicitar cancelamento
+                </button>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="text-button primary-text"
+                (click)="cancellationFormOpen.set(true)"
+              >
+                Solicitar encerramento
+              </button>
+            }
+          </section>
+        </aside>
+      </div>
+    } @else if (tab() === 'preferences') {
+      <form class="panel" #preferencesForm="ngForm" (ngSubmit)="savePreferences()">
+        <h2>Preferências</h2>
+        <div class="grid">
+          <label
+            >Início da semana
+            <select name="weekStartsOn" [(ngModel)]="preferences.weekStartsOn">
+              <option [ngValue]="0">Domingo</option>
+              <option [ngValue]="1">Segunda-feira</option>
+              <option [ngValue]="2">Terça-feira</option>
+              <option [ngValue]="3">Quarta-feira</option>
+              <option [ngValue]="4">Quinta-feira</option>
+              <option [ngValue]="5">Sexta-feira</option>
+              <option [ngValue]="6">Sábado</option>
+            </select>
+          </label>
+          <label
+            >Janela de contas a pagar (dias)
+            <input
+              name="window"
+              type="number"
+              min="0"
+              max="60"
+              required
+              [(ngModel)]="preferences.payableWindowDays"
+          /></label>
+          <label
+            >Antecedência de alerta (dias)
+            <input
+              name="alert"
+              type="number"
+              min="0"
+              max="30"
+              required
+              [(ngModel)]="preferences.payableAlertDays"
+          /></label>
+          <label
+            >Tamanho máximo por anexo (MB)
+            <input
+              name="maxMb"
+              type="number"
+              min="1"
+              max="25"
+              required
+              [(ngModel)]="preferences.attachmentMaxMb"
+          /></label>
+          <label
+            >Máximo de anexos
+            <input
+              name="maxFiles"
+              type="number"
+              min="1"
+              max="20"
+              required
+              [(ngModel)]="preferences.attachmentMaxFiles"
+          /></label>
+        </div>
+        <div class="checks">
+          <label
+            ><input type="checkbox" name="future" [(ngModel)]="preferences.allowFutureDates" />
+            Permitir datas futuras</label
+          >
+          <label
+            ><input type="checkbox" name="cascade" [(ngModel)]="preferences.cascadeReopen" />
+            Reabrir meses posteriores em cascata</label
+          >
+          <strong>Exigir autenticação em duas etapas para:</strong>
+          <label
+            ><input
+              type="checkbox"
+              [checked]="hasMfaRole('TENANT_ADMIN')"
+              (change)="setMfaRole('TENANT_ADMIN', $any($event.target).checked)"
+            />
+            Administrador</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              [checked]="hasMfaRole('TREASURER')"
+              (change)="setMfaRole('TREASURER', $any($event.target).checked)"
+            />
+            Tesouraria</label
+          >
+        </div>
+        <button class="primary" type="submit" [disabled]="saving() || preferencesForm.invalid">
+          Salvar preferências
+        </button>
+      </form>
+    } @else if (tab() === 'catalogs') {
+      <section class="panel">
+        <h2>Catálogos</h2>
+        <div class="catalog-toolbar">
+          <label
+            >Catálogo
+            <select [ngModel]="catalogKind()" (ngModelChange)="changeCatalog($event)">
+              @for (kind of kinds; track kind.value) {
+                <option [value]="kind.value">{{ kind.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="inline"
+            ><input
+              type="checkbox"
+              [ngModel]="showInactive()"
+              (ngModelChange)="showInactive.set($event)"
+            />
+            Mostrar inativos</label
+          >
+          <button type="button" class="primary" (click)="editCatalog()" [disabled]="saving()">
+            Adicionar
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Usos</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of catalogs()[catalogKind()]; track item.id) {
+                @if (item.active || showInactive()) {
+                  <tr>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.active ? 'Ativo' : 'Inativo' }}</td>
+                    <td>{{ item.usageCount }}</td>
+                    <td>
+                      <button type="button" (click)="editCatalog(item)" [disabled]="saving()">
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        (click)="deleteCatalog(item)"
+                        [disabled]="saving() || item.usageCount > 0"
+                        title="Itens em uso devem ser inativados"
+                      >
+                        Excluir
+                      </button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (catalogFormOpen()) {
+          <form class="editor" #catalogForm="ngForm" (ngSubmit)="saveCatalog()">
+            <h3>{{ editing() ? 'Editar item' : 'Novo item' }}</h3>
+            <div class="grid">
+              <label
+                >Descrição
+                <input
+                  name="description"
+                  [(ngModel)]="catalogDraft.description"
+                  required
+                  maxlength="120"
+              /></label>
+              @if (catalogKind() === 'contribution-types') {
+                <label
+                  >Categoria
+                  <select name="category" [(ngModel)]="catalogDraft.category" required>
+                    @for (category of categories; track category.value) {
+                      <option [value]="category.value">{{ category.label }}</option>
+                    }
+                  </select></label
+                >
+              } @else if (catalogKind() === 'payment-methods') {
+                <label
+                  >Classificação
+                  <select name="kind" [(ngModel)]="catalogDraft.kind" required>
+                    @for (kind of paymentKinds; track kind.value) {
+                      <option [value]="kind.value">{{ kind.label }}</option>
+                    }
+                  </select></label
+                >
+              }
+            </div>
+            <div class="checks">
+              <label
+                ><input type="checkbox" name="active" [(ngModel)]="catalogDraft.active" />
+                Ativo</label
+              >
+              @if (catalogKind() === 'contribution-types') {
+                <label
+                  ><input
+                    type="checkbox"
+                    name="requiresMember"
+                    [(ngModel)]="catalogDraft.requiresMember"
+                  />
+                  Exigir membro</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="countsForFees"
+                    [(ngModel)]="catalogDraft.countsForFees"
+                  />
+                  Incluir na base das taxas</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="countsAsContributor"
+                    [(ngModel)]="catalogDraft.countsAsContributor"
+                  />
+                  Incluir no relatório de contribuintes</label
+                >
+              }
+            </div>
+            <div class="actions">
+              <button class="primary" type="submit" [disabled]="saving() || catalogForm.invalid">
+                Salvar
+              </button>
+              <button type="button" (click)="catalogFormOpen.set(false)" [disabled]="saving()">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    } @else {
+      <form class="panel" #feesForm="ngForm" (ngSubmit)="saveFees()">
+        <h2>Taxas associativas</h2>
+        <p>
+          As regras ativas são usadas nos cálculos. Alterações afetam os cálculos de períodos
+          anteriores.
+        </p>
+        @for (fee of fees; track $index; let i = $index) {
+          <div class="fee">
+            <div class="grid">
+              <label
+                >Nome <input [name]="'feeName' + i" [(ngModel)]="fee.name" required maxlength="120"
+              /></label>
+              <label
+                >Percentual (%)
+                <input
+                  [name]="'feePercent' + i"
+                  type="text"
+                  inputmode="decimal"
+                  pattern="[0-9]{1,3}(\.[0-9]{1,2})?"
+                  [(ngModel)]="fee.percent"
+                  required
+              /></label>
+              <label
+                >Arredondamento
+                <select [name]="'rounding' + i" [(ngModel)]="fee.rounding">
+                  <option value="HALF_UP_2">Centavo mais próximo</option>
+                  <option value="LEGACY_CENTS_09">Compatibilidade v1 (centavos fixos em 09)</option>
+                </select></label
+              >
+              <label
+                >Ordem
+                <input
+                  [name]="'order' + i"
+                  type="number"
+                  min="-32768"
+                  max="32767"
+                  step="1"
+                  [(ngModel)]="fee.sortOrder"
+                  required
+              /></label>
+            </div>
+            @if (fee.rounding === 'LEGACY_CENTS_09') {
+              <p class="warning">
+                Compatibilidade v1: o resultado terá centavos fixos em 09, inclusive para base zero.
+              </p>
+            }
+            <div class="actions">
+              <label class="inline"
+                ><input type="checkbox" [name]="'feeActive' + i" [(ngModel)]="fee.active" />
+                Ativa</label
+              >
+              <button type="button" (click)="removeFee(i)" [disabled]="saving()">Remover</button>
+            </div>
+          </div>
+        }
+        <div class="actions">
+          <button type="button" (click)="addFee()" [disabled]="saving()">Adicionar regra</button>
+          <button class="primary" type="submit" [disabled]="saving() || feesForm.invalid">
+            Salvar regras
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

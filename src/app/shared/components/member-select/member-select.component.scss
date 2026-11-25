@@ -9,6 +9,11 @@
   gap: 6px;
 }
 
+.member-select label > span {
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
 .member-select-input {
   position: relative;
 }
@@ -16,7 +21,14 @@
 .member-select-input input {
   width: 100%;
   box-sizing: border-box;
-  padding-right: 40px;
+  height: 36px;
+  padding: 0 40px 0 10px;
+  border: 1px solid #e1e4ed;
+  border-radius: 5px;
+  background: #fff;
+  color: #30354a;
+  font: inherit;
+  font-size: 0.6875rem;
 }
 
 .member-select-input button {
@@ -80,6 +92,12 @@
 
 :host-context(.dark-theme) .member-select-options {
   border-color: #3a4055;
+  background: #202435;
+  color: #f3f2fa;
+}
+
+:host-context(.dark-theme) .member-select-input input {
+  border-color: #4c5571;
   background: #202435;
   color: #f3f2fa;
 }

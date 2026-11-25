@@ -119,6 +119,15 @@ export const routes: Routes = [
         data: { breadcrumb: 'Contribuições' },
         title: 'Contribuições | IBG Gestão',
       },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./modules/settings/components/settings-page/settings-page.component').then(
+            (module) => module.SettingsPageComponent,
+          ),
+        data: { breadcrumb: 'Configurações' },
+        title: 'Configurações | IBG Gestão',
+      },
     ],
   },
 ];

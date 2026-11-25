@@ -1,4 +1,5 @@
-import { Component, DestroyRef, OnInit, effect, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, DestroyRef, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ActivatedRoute,
@@ -12,6 +13,7 @@ import { TenantContextService } from '../../core/tenant/services/tenant-context.
 import { ThemeService } from '../../core/theme/theme.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { canManageMembers } from '../../core/tenant/tenant-access';
+import { SettingsService } from '../../modules/settings/services/settings.service';
 
 type TenantView = 'loading' | 'ready' | 'error' | 'denied';
 
@@ -28,13 +30,24 @@ export class TenantLayoutComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly theme = inject(ThemeService);
   private readonly toast = inject(ToastService);
+  private readonly settings = inject(SettingsService);
 
   protected readonly view = signal<TenantView>('loading');
   protected readonly feedback = signal('');
   protected readonly tenant = this.context.current;
   protected readonly displayName = this.context.displayName;
   protected readonly isDarkTheme = this.theme.isDarkTheme;
+  protected readonly logoUrl = signal<string | null>(null);
   protected tenantSlug = '';
+  private logoRequest = 0;
+  private readonly syncLogoEffect = effect(() => {
+    const tenant = this.context.current();
+    this.context.logoVersion();
+    const dark = this.isDarkTheme();
+    const request = ++this.logoRequest;
+    untracked(() => this.clearLogo());
+    if (tenant) void this.loadLogo(tenant, request, dark ? 'DARK' : 'LIGHT');
+  });
   private readonly syncContextEffect = effect(() => {
     this.context.status();
     this.context.current();
@@ -42,6 +55,10 @@ export class TenantLayoutComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => {
+      this.logoRequest++;
+      this.clearLogo();
+    });
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.tenantSlug = params.get('slug') ?? '';
       this.syncContext();
@@ -123,5 +140,39 @@ export class TenantLayoutComponent implements OnInit {
     }
     this.feedback.set('');
     this.view.set('ready');
+  }
+
+  private async loadLogo(tenant: NonNullable<ReturnType<typeof this.context.current>>, request: number, theme: 'LIGHT' | 'DARK'): Promise<void> {
+    const cached = this.context.getCachedLogo(tenant.membership.tenantId, theme);
+    const fallback = theme === 'DARK'
+      ? this.context.getCachedLogo(tenant.membership.tenantId, 'LIGHT')
+      : null;
+    const available = cached ?? fallback;
+    if (available) {
+      if (request === this.logoRequest && !this.destroyRef.destroyed && this.context.current() === tenant &&
+          this.isDarkTheme() === (theme === 'DARK')) {
+        this.logoUrl.set(URL.createObjectURL(available));
+      }
+      return;
+    }
+    try {
+      const logo = await this.settings.getLogo(tenant.accessToken, tenant.membership.tenantId, theme);
+      if (request !== this.logoRequest || this.destroyRef.destroyed || this.context.current() !== tenant ||
+          this.isDarkTheme() !== (theme === 'DARK')) return;
+      this.context.cacheLogo(tenant.membership.tenantId, theme, logo);
+      this.logoUrl.set(URL.createObjectURL(logo));
+    } catch (error) {
+      if (request !== this.logoRequest || this.destroyRef.destroyed || this.context.current() !== tenant ||
+          this.isDarkTheme() !== (theme === 'DARK')) return;
+      if (!(error instanceof HttpErrorResponse) || error.status !== 404) {
+        this.toast.error('Não foi possível carregar a logo da igreja.');
+      }
+    }
+  }
+
+  private clearLogo(): void {
+    const current = this.logoUrl();
+    if (current) URL.revokeObjectURL(current);
+    this.logoUrl.set(null);
   }
 }

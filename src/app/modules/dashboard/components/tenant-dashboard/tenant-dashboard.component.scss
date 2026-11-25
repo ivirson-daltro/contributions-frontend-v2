@@ -34,6 +34,14 @@ app-tenant-layout {
   line-height: 1;
   text-decoration: none;
 }
+.tenant-brand img {
+  display: block;
+  width: auto;
+  max-width: 150px;
+  height: auto;
+  max-height: 48px;
+  object-fit: contain;
+}
 
 .tenant-brand-caption {
   margin: 5px 0 28px;

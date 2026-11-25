@@ -32,6 +32,12 @@ describe('MembersService', () => {
   });
 
   it('uses the catalog and CRUD routes, including explicit duplicate confirmation', async () => {
+    const all = service.listAll('token', 'tenant');
+    const allRequest = http.expectOne(`${environment.apiUrl}/members/all`);
+    expect(allRequest.request.headers.get('X-Tenant-Id')).toBe('tenant');
+    allRequest.flush([{ id: 'member', name: 'Ana', memberType: { id: 'type', description: 'Membro' } }]);
+    await expect(all).resolves.toHaveLength(1);
+
     const types = service.listTypes('token', 'tenant');
     const catalog = http.expectOne(`${environment.apiUrl}/catalogs/member-types`);
     expect(catalog.request.headers.get('X-Tenant-Id')).toBe('tenant');

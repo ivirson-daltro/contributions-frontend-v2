@@ -7,6 +7,7 @@ import { IssueAdminInvitationResponse } from '../../dtos/issue-admin-invitation-
 import { PlatformTenant } from '../../dtos/platform-tenant.dto';
 import { PlatformService } from '../../services/platform.service';
 import { ToastService } from '../../../../core/ui/toast.service';
+import { cnpjDigits, formatCnpj } from '../../../../shared/utils/cnpj-mask';
 
 type PlatformView = 'loading' | 'ready' | 'enroll' | 'verify' | 'denied';
 
@@ -70,10 +71,6 @@ export class PlatformComponent implements OnInit {
       ],
     }),
     document: new FormControl('', { nonNullable: true }),
-    timezone: new FormControl('America/Sao_Paulo', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
     adminName: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(2), Validators.maxLength(120)],
@@ -160,6 +157,14 @@ export class PlatformComponent implements OnInit {
     }
   }
 
+  protected formatDocument(event: Event): void {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    const formatted = formatCnpj(input.value);
+    this.createForm.controls.document.setValue(formatted);
+    input.value = formatted;
+  }
+
   protected async createTenant(): Promise<void> {
     this.createForm.markAllAsTouched();
     if (this.createForm.invalid || !this.accessToken || this.isSaving()) return;
@@ -171,7 +176,7 @@ export class PlatformComponent implements OnInit {
     try {
       const result = await this.platformService.createTenant(this.accessToken, {
         ...values,
-        document: values.document.trim() || null,
+        document: cnpjDigits(values.document),
         name: values.name.trim(),
         slug: values.slug.trim(),
         adminName: values.adminName.trim(),
@@ -188,7 +193,6 @@ export class PlatformComponent implements OnInit {
         name: '',
         slug: '',
         document: '',
-        timezone: 'America/Sao_Paulo',
         adminName: '',
         adminEmail: '',
       });

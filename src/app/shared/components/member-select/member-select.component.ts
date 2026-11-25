@@ -13,6 +13,7 @@ export class MemberSelectComponent implements OnInit {
   readonly label = input('Membro');
   readonly placeholder = input('Buscar membro');
   readonly showOptionalHint = input(true);
+  readonly hideLabel = input(false);
   readonly selected = output<MemberLookup | null>();
   readonly queryChanged = output<string>();
 

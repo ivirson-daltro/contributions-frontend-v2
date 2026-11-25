@@ -156,17 +156,11 @@
                   id="church-document"
                   formControlName="document"
                   autocomplete="off"
+                  maxlength="18"
+                  inputmode="numeric"
                   placeholder="00.000.000/0000-00"
+                  (input)="formatDocument($event)"
                 />
-              </div>
-              <div class="platform-field">
-                <label for="church-timezone">Fuso horário</label>
-                <select id="church-timezone" formControlName="timezone">
-                  <option value="America/Sao_Paulo">Brasília (America/Sao_Paulo)</option>
-                  <option value="America/Manaus">Manaus (America/Manaus)</option>
-                  <option value="America/Rio_Branco">Rio Branco (America/Rio_Branco)</option>
-                  <option value="America/Noronha">Fernando de Noronha (America/Noronha)</option>
-                </select>
               </div>
             </div>
 

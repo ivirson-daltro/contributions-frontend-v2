@@ -23,10 +23,14 @@
     <section class="member-card members-list" aria-labelledby="members-list-title">
       <h2 id="members-list-title" class="list-title">Todos os membros</h2>
       <form class="members-filters" [formGroup]="filters" (ngSubmit)="$event.preventDefault()">
-        <label>
-          <span class="visually-hidden">Buscar por nome</span>
-          <input formControlName="q" maxlength="120" type="search" placeholder="Buscar por nome" />
-        </label>
+        <app-member-select
+          [membersLoader]="loadMembers"
+          [showOptionalHint]="false"
+          [hideLabel]="true"
+          label="Buscar por nome"
+          placeholder="Buscar por nome"
+          (queryChanged)="filters.controls.q.setValue($event)"
+        />
         <label>
           <span class="visually-hidden">Tipo de membro</span>
           <select formControlName="memberTypeId">
@@ -66,13 +70,25 @@
                   <tr>
                     <td>{{ member.name }}</td>
                     <td>{{ member.memberType.description }}</td>
-                    <td>{{ member.phone || '—' }}</td>
+                    <td>{{ formatPhone(member.phone) }}</td>
                     <td><span class="status" [class.active]="member.status === 'ACTIVE'">{{ statusLabels[member.status] }}</span></td>
                     <td>
-                      <button type="button" class="row-action" (click)="openMember(member)" [disabled]="opening()"
-                        [attr.aria-label]="'Ver detalhes de ' + member.name">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
-                      </button>
+                      <div class="row-actions member-row-actions">
+                        <button type="button" (click)="openMember(member)" [disabled]="opening()" title="Ver detalhes"
+                          [attr.aria-label]="'Ver detalhes de ' + member.name">
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+                        </button>
+                        @if (canEditSummary(member)) {
+                          <button type="button" (click)="openEditFromList(member)" [disabled]="opening()" title="Editar membro"
+                            [attr.aria-label]="'Editar ' + member.name">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/edit.svg#edit" /></svg>
+                          </button>
+                          <button type="button" class="delete" (click)="deleteFromList(member)" [disabled]="opening()" title="Excluir membro"
+                            [attr.aria-label]="'Excluir ' + member.name">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/delete.svg#delete" /></svg>
+                          </button>
+                        }
+                      </div>
                     </td>
                   </tr>
                 }
@@ -99,70 +115,56 @@
         </div>
       }
     </section>
-  } @else if (view() === 'detail') {
-    @if (selected(); as member) {
-      <header class="members-heading">
-        <div><h1>{{ member.name }}</h1><p>Dados e vínculo com a igreja.</p></div>
-        <button type="button" class="member-button secondary" (click)="view.set('list')">Voltar</button>
-      </header>
-      <section class="member-card detail-card" aria-labelledby="detail-title">
-        <div class="detail-heading">
-          <h2 id="detail-title">Dados do membro</h2>
-          @if (canEditSelected()) {
-            <div class="detail-actions">
-              <button type="button" class="member-button secondary" (click)="openEdit()" [disabled]="catalogsLoading() || catalogError()">Editar</button>
-              <button type="button" class="member-button danger" (click)="confirmingDelete.set(true)">Excluir</button>
-            </div>
-          }
-        </div>
-        <dl class="detail-grid">
-          <div><dt>Nome</dt><dd>{{ member.name }}</dd></div>
-          <div><dt>Tipo de membro</dt><dd>{{ member.memberType.description }}</dd></div>
-          <div><dt>Situação</dt><dd>{{ statusLabels[member.status] }}</dd></div>
-          <div><dt>Telefone</dt><dd>{{ member.phone || '—' }}</dd></div>
-          <div><dt>E-mail</dt><dd>{{ member.email || '—' }}</dd></div>
-          <div><dt>Gênero</dt><dd>{{ member.gender || '—' }}</dd></div>
-          <div><dt>Nascimento</dt><dd>{{ (member.birthDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
-          <div><dt>Entrada</dt><dd>{{ (member.entryDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
-          <div><dt>Batismo</dt><dd>{{ (member.baptismDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
-          <div><dt>CEP</dt><dd>{{ member.zipCode || '—' }}</dd></div>
-          <div><dt>Rua</dt><dd>{{ member.street || '—' }}</dd></div>
-          <div><dt>Número</dt><dd>{{ member.number || '—' }}</dd></div>
-          <div><dt>Complemento</dt><dd>{{ member.complement || '—' }}</dd></div>
-          <div><dt>Bairro</dt><dd>{{ member.neighborhood || '—' }}</dd></div>
-          <div><dt>Cidade</dt><dd>{{ member.city || '—' }}</dd></div>
-          <div><dt>Estado</dt><dd>{{ member.state || '—' }}</dd></div>
-          <div><dt>Consentimento</dt><dd>{{ member.consentAt ? 'Informado' : 'Não informado' }}</dd></div>
-        </dl>
-        @if (!canEditSelected()) {
-          <p class="muted">A tesouraria pode editar e excluir apenas os membros que cadastrou.</p>
-        }
-        @if (confirmingDelete()) {
-          <div class="confirm-box" role="alert">
-            <p>Deseja excluir este membro? Esta ação não pode ser desfeita pela tela.</p>
-            <button type="button" class="member-button secondary" (click)="confirmingDelete.set(false)" [disabled]="saving()">Cancelar</button>
-            <button type="button" class="member-button danger" (click)="deleteMember()" [disabled]="saving()">Confirmar exclusão</button>
-          </div>
-        }
-      </section>
-    }
-  } @else {
-    <header class="members-heading">
-      <div><h1>{{ view() === 'edit' ? 'Editar membro' : 'Novo membro' }}</h1><p>Organize os dados pessoais e o vínculo com a igreja.</p></div>
-      <button type="button" class="member-button secondary" (click)="closeForm()" [disabled]="saving() || !!duplicates()">Voltar</button>
-    </header>
-    <app-member-form [member]="selected()" [types]="types()" [fullAccess]="fullAccess()"
-      [saving]="saving() || !!duplicates()" (save)="saveMember($event)" (cancel)="closeForm()" />
-    @if (duplicates(); as names) {
-      <div class="member-card confirm-box duplicate-box" role="alert">
-        <h2>Possível cadastro duplicado</h2>
-        <p>Encontramos dados semelhantes. Confira antes de continuar.</p>
-        @if (names.length) {
-          <ul>@for (name of names; track $index) { <li>{{ name }}</li> }</ul>
-        }
-        <button type="button" class="member-button secondary" (click)="reviewDuplicate()" [disabled]="saving()">Revisar dados</button>
-        <button type="button" class="member-button primary" (click)="confirmDuplicate()" [disabled]="saving()">Cadastrar mesmo assim</button>
-      </div>
-    }
   }
 </div>
+<app-member-form [member]="selected()" [types]="types()" [fullAccess]="fullAccess()"
+  [saving]="saving() || !!duplicates()" [duplicates]="duplicates()"
+  (save)="saveMember($event)" (cancel)="closeForm()"
+  (duplicateConfirmed)="confirmDuplicate()" (duplicateReviewed)="reviewDuplicate()" />
+
+<dialog #memberDetailDialog class="member-detail-dialog" aria-labelledby="member-detail-title"
+  (cancel)="closeDetailDialog()">
+  @if (selected(); as member) {
+    <header class="member-detail-header">
+      <div>
+        <h2 id="member-detail-title">{{ member.name }}</h2>
+        <p>Dados e vínculo com a igreja.</p>
+      </div>
+      <button type="button" class="dialog-close" aria-label="Fechar" (click)="closeDetailDialog()">×</button>
+    </header>
+    <dl class="detail-grid">
+      <div><dt>Nome</dt><dd>{{ member.name }}</dd></div>
+      <div><dt>Tipo de membro</dt><dd>{{ member.memberType.description }}</dd></div>
+      <div><dt>Situação</dt><dd>{{ statusLabels[member.status] }}</dd></div>
+      <div><dt>Telefone</dt><dd>{{ formatPhone(member.phone) }}</dd></div>
+      <div><dt>E-mail</dt><dd>{{ member.email || '—' }}</dd></div>
+      <div><dt>Gênero</dt><dd>{{ member.gender || '—' }}</dd></div>
+      <div><dt>Nascimento</dt><dd>{{ (member.birthDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
+      <div><dt>Entrada</dt><dd>{{ (member.entryDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
+      <div><dt>Batismo</dt><dd>{{ (member.baptismDate | date:'dd/MM/yyyy') || '—' }}</dd></div>
+      <div><dt>CEP</dt><dd>{{ member.zipCode || '—' }}</dd></div>
+      <div><dt>Rua</dt><dd>{{ member.street || '—' }}</dd></div>
+      <div><dt>Número</dt><dd>{{ member.number || '—' }}</dd></div>
+      <div><dt>Complemento</dt><dd>{{ member.complement || '—' }}</dd></div>
+      <div><dt>Bairro</dt><dd>{{ member.neighborhood || '—' }}</dd></div>
+      <div><dt>Cidade</dt><dd>{{ member.city || '—' }}</dd></div>
+      <div><dt>Estado</dt><dd>{{ member.state || '—' }}</dd></div>
+      <div><dt>Consentimento</dt><dd>{{ member.consentAt ? 'Informado' : 'Não informado' }}</dd></div>
+    </dl>
+    @if (!canEditSelected()) {
+      <p class="muted">A tesouraria pode editar e excluir apenas os membros que cadastrou.</p>
+    }
+    @if (confirmingDelete()) {
+      <div class="confirm-box" role="alert">
+        <p>Deseja excluir este membro? Esta ação não pode ser desfeita pela tela.</p>
+        <button type="button" class="member-button secondary" (click)="closeDetailDialog()" [disabled]="saving()">Cancelar</button>
+        <button type="button" class="member-button danger" (click)="deleteMember()" [disabled]="saving()">Confirmar exclusão</button>
+      </div>
+    } @else if (canEditSelected()) {
+      <footer class="member-detail-actions">
+        <button type="button" class="member-button secondary" (click)="openEdit()">Editar</button>
+        <button type="button" class="member-button danger" (click)="confirmingDelete.set(true)">Excluir</button>
+      </footer>
+    }
+  }
+</dialog>

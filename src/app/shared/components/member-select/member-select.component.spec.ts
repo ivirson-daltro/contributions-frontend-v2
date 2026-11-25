@@ -73,4 +73,12 @@ describe('MemberSelectComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('João Silva');
     expect(fixture.nativeElement.textContent).not.toContain('Ana Paula');
   });
+
+  it('can hide the label for compact filter bars', () => {
+    const fixture = TestBed.createComponent(MemberSelectComponent);
+    fixture.componentRef.setInput('membersLoader', vi.fn().mockResolvedValue([]));
+    fixture.componentRef.setInput('hideLabel', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('label > span')).toBeNull();
+  });
 });

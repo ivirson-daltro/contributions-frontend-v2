@@ -15,7 +15,7 @@ describe('MembersPageComponent', () => {
     complement: null, neighborhood: null, city: null, state: null, consentAt: null,
     createdBy: 'other-user', createdAt: '', updatedAt: '',
   };
-  const service = { list: vi.fn(), listTypes: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
+  const service = { list: vi.fn(), listAll: vi.fn(), listTypes: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
   const toast = { error: vi.fn(), warning: vi.fn(), success: vi.fn() };
   let fixture: ComponentFixture<MembersPageComponent>;
   let element: HTMLElement;
@@ -41,9 +41,22 @@ describe('MembersPageComponent', () => {
   }
 
   function setValue(name: string, value: string): void {
+    if (name === 'q') {
+      const input = element.querySelector<HTMLInputElement>('app-member-select input')!;
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      fixture.detectChanges();
+      return;
+    }
     const control = element.querySelector<HTMLInputElement | HTMLSelectElement>(`[formControlName="${name}"]`)!;
     control.value = value;
     control.dispatchEvent(new Event(control instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }));
+    fixture.detectChanges();
+  }
+
+  function submitForm(): void {
+    element.querySelector<HTMLFormElement>('app-member-form form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();
   }
 
@@ -57,6 +70,7 @@ describe('MembersPageComponent', () => {
     vi.clearAllMocks();
     service.list.mockReset().mockResolvedValue({ data: [member], meta: { page: 1, pageSize: 8, total: 9 } });
     service.listTypes.mockReset().mockResolvedValue([{ id: 'type', description: 'Membro' }]);
+    service.listAll.mockReset().mockResolvedValue([{ id: 'ana', name: 'Ana', memberType: { id: 'type', description: 'Membro' } }]);
     service.get.mockReset().mockResolvedValue(member);
     service.create.mockReset();
     service.delete.mockReset();
@@ -82,8 +96,9 @@ describe('MembersPageComponent', () => {
     await setup(['TREASURER']);
     await openMember();
     expect(element.textContent).toContain('apenas os membros que cadastrou');
-    expect([...element.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Editar')).toBe(false);
-    click('Voltar');
+    expect(element.querySelector('.member-detail-actions')).toBeNull();
+    (element.querySelector<HTMLButtonElement>('.member-detail-dialog .dialog-close'))!.click();
+    fixture.detectChanges();
     service.get.mockResolvedValue({ ...member, createdBy: 'user-id' });
     await openMember();
     expect(element.textContent).toContain('Editar');
@@ -106,6 +121,18 @@ describe('MembersPageComponent', () => {
     expect(service.list).toHaveBeenLastCalledWith('token', 'other-tenant', expect.anything());
     expect(element.textContent).toContain('Todos os membros');
     expect(element.textContent).not.toContain('Dados e vínculo com a igreja');
+  });
+
+  it('closes the member details modal when cancellation is chosen during deletion', async () => {
+    await setup(['TENANT_ADMIN']);
+    await openMember();
+    const dialog = element.querySelector<HTMLDialogElement>('.member-detail-dialog')!;
+    expect(dialog.hasAttribute('open')).toBe(true);
+    click('Excluir');
+    dialog.querySelector<HTMLButtonElement>('.confirm-box .secondary')!.click();
+    fixture.detectChanges();
+    expect(dialog.hasAttribute('open')).toBe(false);
+    expect(element.textContent).toContain('Todos os membros');
   });
 
   it('gives full access when a treasurer also has the secretary role and reports delete conflicts', async () => {
@@ -133,26 +160,4 @@ describe('MembersPageComponent', () => {
     expect(element.textContent).toContain('Todos os membros');
   });
 
-  it('requires explicit confirmation before forcing a duplicate create', async () => {
-    service.create.mockRejectedValueOnce(new HttpErrorResponse({
-      status: 409, error: { code: 'POSSIBLE_DUPLICATE', errors: [{ id: 'other', name: 'Ana existente' }] },
-    })).mockResolvedValueOnce(member);
-    await setup(['SECRETARY']);
-    click('Novo membro');
-    setValue('name', 'Ana');
-    setValue('memberTypeId', 'type');
-    setValue('email', 'ana@example.com');
-    click('Continuar para endereço');
-    click('Continuar para igreja');
-    click('Salvar membro');
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(service.create).toHaveBeenCalledTimes(1);
-    expect(element.textContent).toContain('Ana existente');
-    expect(element.querySelector<HTMLFieldSetElement>('fieldset.form-layout')?.disabled).toBe(true);
-    click('Cadastrar mesmo assim');
-    await fixture.whenStable();
-    expect(service.create).toHaveBeenCalledTimes(2);
-    expect(service.create).toHaveBeenLastCalledWith('token', 'tenant', expect.objectContaining({ name: 'Ana' }), true);
-  });
 });

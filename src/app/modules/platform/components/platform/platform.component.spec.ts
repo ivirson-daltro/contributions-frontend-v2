@@ -112,6 +112,7 @@ describe('PlatformComponent', () => {
     const element = fixture.nativeElement as HTMLElement;
     element.querySelector<HTMLButtonElement>('.platform-toolbar .platform-primary-button')!.click();
     fixture.detectChanges();
+    expect(element.querySelector('#church-timezone')).toBeNull();
 
     const values: Record<string, string> = {
       'church-name': 'Nova Igreja',
@@ -140,6 +141,7 @@ describe('PlatformComponent', () => {
         adminEmail: 'admin@example.com',
       }),
     );
+    expect(platformService.createTenant.mock.calls[0][1]).not.toHaveProperty('timezone');
     expect(element.textContent).toContain('token não poderá ser recuperado');
     expect(
       element.querySelector<HTMLInputElement>('[aria-label="Link de convite"]')?.value,

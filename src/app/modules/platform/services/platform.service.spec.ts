@@ -33,7 +33,6 @@ describe('PlatformService', () => {
       name: 'Igreja Central',
       slug: 'igreja-central',
       document: null,
-      timezone: 'America/Sao_Paulo',
       adminName: 'Ana Martins',
       adminEmail: 'ana@example.com',
     };
@@ -49,7 +48,7 @@ describe('PlatformService', () => {
         slug: payload.slug,
         name: payload.name,
         status: 'TRIAL',
-        timezone: payload.timezone,
+        timezone: 'America/Sao_Paulo',
       },
       invite: {
         token: 'one-time-token',

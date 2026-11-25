@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -8,6 +8,8 @@ import { AuthService } from '../../core/auth/services/auth.service';
 import { ContributionsService } from '../../modules/contributions/services/contributions.service';
 import { TenantDashboardService } from '../../modules/dashboard/services/tenant-dashboard.service';
 import { MembersService } from '../../modules/members/services/members.service';
+import { SettingsService } from '../../modules/settings/services/settings.service';
+import { TenantContextService } from '../../core/tenant/services/tenant-context.service';
 
 describe('Tenant routes', () => {
   const membership = {
@@ -25,6 +27,7 @@ describe('Tenant routes', () => {
   };
   const dashboard = { getSummary: vi.fn(), getSeries: vi.fn() };
   const members = { list: vi.fn(), listTypes: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
+  const settings = { getLogo: vi.fn() };
   const contributions = {
     list: vi.fn(),
     listTypes: vi.fn(),
@@ -74,6 +77,7 @@ describe('Tenant routes', () => {
       .mockResolvedValue([{ id: 'method', description: 'Pix', kind: 'PIX' }]);
     members.list.mockReset().mockResolvedValue({ data: [], meta: { page: 1, pageSize: 8, total: 0 } });
     members.listTypes.mockReset().mockResolvedValue([{ id: 'type', description: 'Membro' }]);
+    settings.getLogo.mockReset().mockRejectedValue(new HttpErrorResponse({ status: 404 }));
 
     TestBed.configureTestingModule({
       providers: [
@@ -83,6 +87,7 @@ describe('Tenant routes', () => {
         { provide: TenantDashboardService, useValue: dashboard },
         { provide: ContributionsService, useValue: contributions },
         { provide: MembersService, useValue: members },
+        { provide: SettingsService, useValue: settings },
       ],
     });
   });
@@ -148,6 +153,7 @@ describe('Tenant routes', () => {
       harness.detectChanges();
       expect(contributions.list).toHaveBeenCalled();
     });
+
     expect(dashboard.getSummary).not.toHaveBeenCalled();
     expect(
       harness.routeNativeElement?.querySelector('.tenant-dashboard.dark-theme'),
@@ -166,6 +172,77 @@ describe('Tenant routes', () => {
       harness.routeNativeElement?.querySelector('.tenant-dashboard.dark-theme'),
     ).not.toBeNull();
     expect(auth.getCurrentUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('discards an old church logo and revokes the current blob URL on destruction', async () => {
+    let resolveOld!: (value: Blob) => void;
+    let resolveNew!: (value: Blob) => void;
+    settings.getLogo.mockReset()
+      .mockReturnValueOnce(new Promise<Blob>((resolve) => { resolveOld = resolve; }))
+      .mockReturnValueOnce(new Promise<Blob>((resolve) => { resolveNew = resolve; }));
+    const create = vi.fn().mockReturnValue('blob:logo');
+    const revoke = vi.fn();
+    const oldCreate = Object.getOwnPropertyDescriptor(URL, 'createObjectURL');
+    const oldRevoke = Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL');
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: create });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revoke });
+    try {
+      const harness = await RouterTestingHarness.create('/tenant/igreja-central');
+      await vi.waitFor(() => expect(settings.getLogo).toHaveBeenCalledTimes(1));
+      const context = TestBed.inject(TenantContextService);
+      const current = context.current()!;
+      context.current.set({ ...current, membership: { ...current.membership, tenantId: 'other-tenant' } });
+      resolveOld(new Blob(['old']));
+      await Promise.resolve();
+      harness.detectChanges();
+      await vi.waitFor(() => expect(settings.getLogo).toHaveBeenCalledTimes(2));
+      expect(create).not.toHaveBeenCalled();
+      resolveNew(new Blob(['new']));
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(harness.routeNativeElement?.querySelector('.tenant-brand img')?.getAttribute('src')).toBe('blob:logo');
+      });
+      expect(settings.getLogo).toHaveBeenCalledTimes(2);
+      harness.fixture.destroy();
+      expect(revoke).toHaveBeenCalledWith('blob:logo');
+    } finally {
+      if (oldCreate) Object.defineProperty(URL, 'createObjectURL', oldCreate);
+      else Reflect.deleteProperty(URL, 'createObjectURL');
+      if (oldRevoke) Object.defineProperty(URL, 'revokeObjectURL', oldRevoke);
+      else Reflect.deleteProperty(URL, 'revokeObjectURL');
+    }
+  });
+
+  it('loads the matching logo when changing theme and discards a late response', async () => {
+    let resolveLight!: (value: Blob) => void;
+    settings.getLogo.mockImplementation((_token, _tenant, theme) => theme === 'LIGHT'
+      ? new Promise<Blob>((resolve) => { resolveLight = resolve; })
+      : Promise.resolve(new Blob(['dark'])));
+    const create = vi.fn().mockReturnValue('blob:dark');
+    const oldCreate = Object.getOwnPropertyDescriptor(URL, 'createObjectURL');
+    const oldRevoke = Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL');
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: create });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
+    try {
+      const harness = await RouterTestingHarness.create('/tenant/igreja-central');
+      await vi.waitFor(() => expect(resolveLight).toBeDefined());
+      harness.routeNativeElement!.querySelector<HTMLButtonElement>('.theme-toggle')!.click();
+      resolveLight(new Blob(['old-light']));
+      await Promise.resolve();
+      harness.detectChanges();
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(harness.routeNativeElement?.querySelector('.tenant-brand img')?.getAttribute('src')).toBe('blob:dark');
+      });
+      expect(settings.getLogo).toHaveBeenCalledWith('token', 'tenant-id', 'DARK');
+      expect(create).toHaveBeenCalledTimes(1);
+      harness.fixture.destroy();
+    } finally {
+      if (oldCreate) Object.defineProperty(URL, 'createObjectURL', oldCreate);
+      else Reflect.deleteProperty(URL, 'createObjectURL');
+      if (oldRevoke) Object.defineProperty(URL, 'revokeObjectURL', oldRevoke);
+      else Reflect.deleteProperty(URL, 'revokeObjectURL');
+    }
   });
 
   it('keeps the selected theme when signing out to the login page', async () => {

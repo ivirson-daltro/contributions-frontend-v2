@@ -407,8 +407,9 @@ app-contributions {
 }
 
 .contributions-list th {
-  color: #9298a8;
-  font-size: 0.5625rem;
+  background: #f5f6fa;
+  color: #737b96;
+  font-size: 0.625rem;
   font-weight: 500;
 }
 
@@ -746,6 +747,11 @@ app-contributions {
 .dark-theme .contribution-dialog footer,
 .dark-theme .member-results {
   border-color: #3a4055;
+}
+
+.dark-theme .contributions-list th {
+  background: #30364a;
+  color: #c1c5d4;
 }
 
 .dark-theme .method-badge,

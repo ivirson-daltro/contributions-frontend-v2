@@ -1,6 +1,12 @@
 <div class="tenant-dashboard" [class.dark-theme]="isDarkTheme()">
   <aside class="tenant-sidebar">
-    <a class="tenant-brand" routerLink="/select-church" aria-label="IBG Gestão">ibg</a>
+    <a class="tenant-brand" routerLink="/select-church" aria-label="Selecionar igreja">
+      @if (logoUrl(); as logo) {
+        <img [src]="logo" alt="Logo da igreja">
+      } @else {
+        ibg
+      }
+    </a>
     <div class="tenant-brand-caption">GESTÃO DA IGREJA</div>
 
     @if (tenant()?.membership; as church) {
@@ -69,12 +75,12 @@
         </svg>
         Auditoria
       </button>
-      <button class="navigation-item" type="button" disabled>
+      <a class="navigation-item" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLink]="['/tenant', tenantSlug, 'settings']">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <use href="icons/settings.svg#settings" />
         </svg>
         Configurações
-      </button>
+      </a>
       }
     </nav>
 

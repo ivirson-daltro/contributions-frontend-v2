@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { Member, MemberList, MemberPayload, MemberQuery, MemberType } from '../dtos/member.dto';
+import { MemberLookup } from '../../../shared/dtos/member-lookup.dto';
 
 @Injectable({ providedIn: 'root' })
 export class MembersService {
@@ -21,6 +22,12 @@ export class MembersService {
 
   listTypes(accessToken: string, tenantId: string): Promise<MemberType[]> {
     return firstValueFrom(this.http.get<MemberType[]>(`${this.baseUrl}/catalogs/member-types`, {
+      headers: this.headers(accessToken, tenantId),
+    }));
+  }
+
+  listAll(accessToken: string, tenantId: string): Promise<MemberLookup[]> {
+    return firstValueFrom(this.http.get<MemberLookup[]>(`${this.baseUrl}/members/all`, {
       headers: this.headers(accessToken, tenantId),
     }));
   }

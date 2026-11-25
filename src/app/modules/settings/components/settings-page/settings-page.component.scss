@@ -1,0 +1,365 @@
+:host {
+  display: block;
+}
+.settings-page {
+  padding: 32px;
+}
+.settings-page > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.settings-page > header > div {
+  min-width: 0;
+}
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+h2 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+}
+h3 {
+  margin: 0 0 14px;
+}
+p {
+  color: #70768b;
+  line-height: 1.5;
+  font-size: 0.8rem;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 24px 0 18px;
+  border-bottom: 1px solid #e2e5ed;
+}
+button {
+  cursor: pointer;
+  border: 1px solid #dfe2eb;
+  border-radius: 7px;
+  padding: 9px 13px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.tabs button {
+  border: 0;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+}
+.tabs button.active {
+  color: #6251df;
+  border-bottom-color: #6251df;
+  font-weight: 700;
+}
+button.primary {
+  border-color: #6251df;
+  background: #6251df;
+  color: #fff;
+}
+.panel {
+  margin-bottom: 18px;
+  padding: 24px;
+  border: 1px solid #e5e8ef;
+  border-radius: 12px;
+  background: #fff;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+label {
+  display: grid;
+  gap: 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+input[type='checkbox'] {
+  accent-color: #6251df;
+}
+.checks {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  font-size: 0.75rem;
+}
+.checks label,
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.catalog-toolbar,
+.actions {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.75rem;
+}
+th,
+td {
+  padding: 10px;
+  border-bottom: 1px solid #e5e8ef;
+}
+td button + button {
+  margin-left: 6px;
+}
+.editor,
+.fee {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid #e5e8ef;
+  border-radius: 8px;
+}
+.warning {
+  color: #a46113;
+}
+.file-label input {
+  font: inherit;
+}
+.logo-theme-help {
+  margin-top: 6px;
+}
+.logo-theme-editors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+.logo-editor {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #e5e8ef;
+  border-radius: 10px;
+}
+.logo-editor strong {
+  font-size: 0.75rem;
+}
+.logo-preview,
+.logo-placeholder {
+  width: 150px;
+  height: 48px;
+}
+.logo-preview {
+  border: 1px solid #e5e8ef;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
+}
+.dark-preview {
+  background: #242a3b;
+  border-color: #41475b;
+}
+.logo-placeholder {
+  display: grid;
+  place-items: center;
+  border: 1px dashed #dfe2eb;
+  border-radius: 8px;
+  color: #6251df;
+  font-size: 1.5rem;
+  font-weight: 750;
+}
+.file-label {
+  width: min(280px, 100%);
+}
+.logo-editor span {
+  font-size: 0.75rem;
+}
+.settings-church-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.settings-church-main {
+  min-width: 0;
+}
+.settings-church-aside {
+  display: grid;
+  gap: 18px;
+}
+.settings-church-layout .panel {
+  margin-bottom: 18px;
+}
+.settings-card-icon {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 8px;
+  fill: none;
+  stroke: #6251df;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.cancellation-panel {
+  min-height: 160px;
+  background: #efecff;
+}
+.cancellation-panel h2 {
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
+}
+.cancellation-panel p {
+  margin: 0 0 12px;
+  font-size: 0.6875rem;
+}
+.cancellation-panel label {
+  margin-bottom: 10px;
+  font-size: 0.6875rem;
+}
+.access-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 14px;
+}
+.access-badges span {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #efecff;
+  color: #6453d8;
+  font-size: 0.6875rem;
+}
+.access-badges span.active {
+  background: #efecff;
+  color: #6453d8;
+}
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6251df;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.settings-rules {
+  display: grid;
+  margin: 12px 0 14px;
+}
+.settings-rules div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+.settings-rules dt {
+  color: #70768b;
+  font-size: 0.6875rem;
+}
+.settings-rules dd {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.export-panel small {
+  display: block;
+  margin-top: 10px;
+  color: #8a90a1;
+  font-size: 0.625rem;
+}
+.export-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6251df;
+  background: #f7f7fb;
+}
+.cancellation-panel textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid #dfe2eb;
+  border-radius: 7px;
+  font: inherit;
+}
+.danger-text {
+  color: #b42338;
+}
+button.danger {
+  border-color: #b42338;
+  background: #b42338;
+  color: #fff;
+}
+:host-context(.dark-theme) .panel {
+  background: #242a3b;
+  border-color: #343a4d;
+}
+:host-context(.dark-theme) p {
+  color: #c1c5d4;
+}
+:host-context(.dark-theme) option {
+  background: #242a3b;
+}
+:host-context(.dark-theme) .editor,
+:host-context(.dark-theme) .fee,
+:host-context(.dark-theme) th,
+:host-context(.dark-theme) td {
+  border-color: #343a4d;
+}
+:host-context(.dark-theme) .logo-editor {
+  border-color: #343a4d;
+}
+:host-context(.dark-theme) .logo-preview {
+  border-color: #343a4d;
+}
+:host-context(.dark-theme) .settings-rules div {
+  border-bottom-color: #343a4d;
+}
+:host-context(.dark-theme) .access-badges span {
+  border: 0;
+  background: #342e51;
+  color: #bcaeff;
+}
+:host-context(.dark-theme) .access-badges span.active {
+  border: 0;
+  background: #342e51;
+  color: #bcaeff;
+}
+@media (max-width: 900px) {
+  .settings-church-layout {
+    grid-template-columns: 1fr;
+  }
+  .settings-church-aside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .settings-page {
+    padding: 20px 14px;
+  }
+  .settings-page > header {
+    flex-direction: column;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .logo-theme-editors,
+  .settings-church-aside {
+    grid-template-columns: 1fr;
+  }
+}
