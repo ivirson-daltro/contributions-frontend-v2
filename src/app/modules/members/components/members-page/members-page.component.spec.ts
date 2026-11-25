@@ -85,16 +85,18 @@ describe('MembersPageComponent', () => {
     });
   });
 
-  it('loads the list, paginates and applies a debounced name filter', async () => {
+  it('loads the list, paginates and applies filters when filter button is clicked', async () => {
     await setup(['TENANT_ADMIN']);
     expect(element.textContent).toContain('Ana');
     element.querySelector<HTMLButtonElement>('[aria-label="Próxima página"]')!.click();
     await fixture.whenStable();
     expect(service.list).toHaveBeenLastCalledWith('token', 'tenant', expect.objectContaining({ page: 2 }));
     setValue('q', ' Maria ');
-    await vi.waitFor(() => expect(service.list).toHaveBeenLastCalledWith(
+    click('Filtrar');
+    await fixture.whenStable();
+    expect(service.list).toHaveBeenLastCalledWith(
       'token', 'tenant', expect.objectContaining({ q: 'Maria', page: 1 }),
-    ));
+    );
   });
 
   it('opens the contributors tab and loads the selected year', async () => {

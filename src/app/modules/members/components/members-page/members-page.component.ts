@@ -123,16 +123,24 @@ export class MembersPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.filters.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.page.set(1);
-      void this.loadList();
-    });
+    // Filter is now applied only when the "Filtrar" button is clicked
   }
 
   protected changeTab(tab: MembersTab): void {
     if (this.tab() === tab) return;
     this.tab.set(tab);
     if (tab === 'contributors') void this.loadContributors();
+  }
+
+  protected applyFilters(): void {
+    this.page.set(1);
+    void this.loadList();
+  }
+
+  protected clearFilters(): void {
+    this.filters.reset({ q: '', memberTypeId: '', status: 'ACTIVE' }, { emitEvent: false });
+    this.page.set(1);
+    void this.loadList();
   }
 
   protected applyContributorFilters(): void {
