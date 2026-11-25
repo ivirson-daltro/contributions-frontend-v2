@@ -32,13 +32,12 @@
         <app-member-select
           [membersLoader]="loadMembers"
           [showOptionalHint]="false"
-          [hideLabel]="true"
           label="Buscar por nome"
           placeholder="Buscar por nome"
           (queryChanged)="filters.controls.q.setValue($event)"
         />
         <label>
-          <span class="visually-hidden">Tipo de membro</span>
+          <span>Tipo de membro</span>
           <select formControlName="memberTypeId">
             <option value="">Todos os tipos</option>
             @for (type of types(); track type.id) {
@@ -47,7 +46,7 @@
           </select>
         </label>
         <label>
-          <span class="visually-hidden">Situação</span>
+          <span>Situação</span>
           <select formControlName="status">
             <option value="ACTIVE">Ativos</option>
             <option value="INACTIVE">Inativos</option>
@@ -125,24 +124,22 @@
             {{ contributorReportLoading() ? 'Gerando...' : 'Gerar relatório' }}
           </button>
         </header>
-        <div class="contributors-filters">
-          <form (ngSubmit)="applyContributorFilters()">
-            <label>
-              <span class="visually-hidden">Buscar contribuinte</span>
-              <input [formControl]="contributorSearch" maxlength="120" type="search" placeholder="Buscar por nome" />
-            </label>
-            <label>
-              <span class="visually-hidden">Ano</span>
-              <select #contributorYearSelect [value]="contributorYear()" (change)="changeContributorYear(contributorYearSelect.value)">
-                @for (year of [contributorYear() - 2, contributorYear() - 1, contributorYear(), contributorYear() + 1]; track year) {
-                  <option [value]="year">{{ year }}</option>
-                }
-              </select>
-            </label>
-            <button type="submit" class="member-button primary">Filtrar</button>
-            <button type="button" class="member-button text" (click)="clearContributorFilters()">Limpar filtros</button>
-          </form>
-        </div>
+        <form class="contributors-filters" (ngSubmit)="applyContributorFilters()">
+          <label>
+            <span>Buscar contribuinte</span>
+            <input [formControl]="contributorSearch" maxlength="120" type="search" placeholder="Buscar por nome" />
+          </label>
+          <label>
+            <span>Ano</span>
+            <select #contributorYearSelect [value]="contributorYear()" (change)="changeContributorYear(contributorYearSelect.value)">
+              @for (year of [contributorYear() - 2, contributorYear() - 1, contributorYear(), contributorYear() + 1]; track year) {
+                <option [value]="year">{{ year }}</option>
+              }
+            </select>
+          </label>
+          <button type="submit" class="member-button primary">Filtrar</button>
+          <button type="button" class="member-button text" (click)="clearContributorFilters()">Limpar filtros</button>
+        </form>
         @if (contributorError()) {
           <div class="list-state" role="alert">Não foi possível carregar os contribuintes.
             <button type="button" class="text-action" (click)="loadContributors()">Tentar novamente</button>

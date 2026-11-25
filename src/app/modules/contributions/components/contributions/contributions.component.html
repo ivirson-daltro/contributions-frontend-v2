@@ -49,6 +49,7 @@
   </div>
 
   <section class="contributions-list" aria-label="Lista de contribuições">
+    <h2 id="contributions-list-title" class="list-title">Contribuições</h2>
     <form class="contributions-filters" [formGroup]="filters" (ngSubmit)="applyFilters(dateRange)">
       <app-member-select
         #memberFilter
@@ -289,10 +290,22 @@
       }
       <div class="contributions-pagination">
         <app-data-pagination
-          [rangeText]="pageRange().start + ' a ' + pageRange().end + ' de ' + result.meta.total + ' contribuições encontradas'"
-          [page]="result.meta.page" [pageCount]="pages()" [pageSize]="appliedFilters.pageSize"
-          [pageSizeOptions]="pageSizes" [loading]="listLoading()" pageSizeClass="contributions-page-size"
-          (pageChange)="loadList($event)" (pageSizeChange)="changePageSize($event.toString())"
+          [rangeText]="
+            pageRange().start +
+            ' a ' +
+            pageRange().end +
+            ' de ' +
+            result.meta.total +
+            ' contribuições encontradas'
+          "
+          [page]="result.meta.page"
+          [pageCount]="pages()"
+          [pageSize]="appliedFilters.pageSize"
+          [pageSizeOptions]="pageSizes"
+          [loading]="listLoading()"
+          pageSizeClass="contributions-page-size"
+          (pageChange)="loadList($event)"
+          (pageSizeChange)="changePageSize($event.toString())"
         />
       </div>
     }

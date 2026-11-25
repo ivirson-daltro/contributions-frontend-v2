@@ -384,8 +384,12 @@ app-contributions {
 }
 
 .contributions-list h2 {
-  margin: 14px 0;
-  font-size: 0.6875rem;
+  margin: -18px -18px 18px;
+  padding: 18px;
+  border-bottom: 1px solid #edf0f5;
+  color: #6251df;
+  font-size: 0.8125rem;
+  font-weight: 650;
 }
 
 .contributions-table-wrap {
@@ -687,6 +691,10 @@ app-contributions {
 
 .dark-theme .contributions-content {
   color: #f1f2f8;
+}
+
+.dark-theme .contributions-list h2 {
+  border-bottom-color: #454c63;
 }
 
 .dark-theme .contributions-totals {
