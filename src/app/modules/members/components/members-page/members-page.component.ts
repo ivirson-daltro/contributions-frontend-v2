@@ -14,13 +14,14 @@ import { MemberFormComponent, MemberFormSubmission } from '../member-form/member
 import { MemberSelectComponent } from '../../../../shared/components/member-select/member-select.component';
 import { MemberLookup } from '../../../../shared/dtos/member-lookup.dto';
 import { formatPhoneMask } from '../../../../shared/utils/phone-mask';
+import { DataPaginationComponent } from '../../../../shared/components/data-pagination/data-pagination.component';
 
 type MembersView = 'list' | 'detail' | 'create' | 'edit';
 type MembersTab = 'members' | 'contributors';
 
 @Component({
   selector: 'app-members-page',
-  imports: [DatePipe, ReactiveFormsModule, MemberFormComponent, MemberSelectComponent],
+  imports: [DatePipe, ReactiveFormsModule, MemberFormComponent, MemberSelectComponent, DataPaginationComponent],
   templateUrl: './members-page.component.html',
   styleUrl: './members-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -126,16 +127,24 @@ export class MembersPageComponent implements OnInit {
       this.page.set(1);
       void this.loadList();
     });
-    this.contributorSearch.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.contributorPage.set(1);
-      void this.loadContributors();
-    });
   }
 
   protected changeTab(tab: MembersTab): void {
     if (this.tab() === tab) return;
     this.tab.set(tab);
     if (tab === 'contributors') void this.loadContributors();
+  }
+
+  protected applyContributorFilters(): void {
+    this.contributorPage.set(1);
+    void this.loadContributors();
+  }
+
+  protected clearContributorFilters(): void {
+    this.contributorSearch.setValue('');
+    this.contributorYear.set(new Date().getFullYear());
+    this.contributorPage.set(1);
+    void this.loadContributors();
   }
 
   protected async loadContributors(): Promise<void> {
@@ -168,6 +177,12 @@ export class MembersPageComponent implements OnInit {
     const parsed = Number(year);
     if (!/^\d{4}$/.test(year) || parsed < 1 || parsed > 9998) return;
     this.contributorYear.set(parsed);
+    this.contributorPage.set(1);
+  }
+
+  protected changeContributorPageSize(value: number): void {
+    if (![8, 20, 50].includes(value)) return;
+    this.contributorPageSize.set(value);
     this.contributorPage.set(1);
     void this.loadContributors();
   }

@@ -479,7 +479,13 @@ app-contributions {
 
 .contributions-pagination {
   padding-top: 16px;
+  width: 100%;
   flex-wrap: wrap;
+}
+
+.contributions-pagination app-data-pagination {
+  flex: 1 1 100%;
+  width: 100%;
 }
 
 .contributions-page-size {

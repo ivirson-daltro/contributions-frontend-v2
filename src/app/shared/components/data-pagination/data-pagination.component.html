@@ -1,0 +1,22 @@
+<div class="data-pagination">
+  <span>{{ rangeText() }}</span>
+  <div class="data-pagination-controls">
+    @if (pageSizeOptions().length) {
+      <label [class]="pageSizeClass()">
+        Por página
+        <select [value]="pageSize()" (change)="changePageSize($event)">
+          @for (size of pageSizeOptions(); track size) {
+            <option [value]="size" [selected]="size === pageSize()">{{ size }}</option>
+          }
+        </select>
+      </label>
+    }
+    <button type="button" aria-label="Página anterior" (click)="previous()" [disabled]="page() <= 1 || loading()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-left.svg#chevron-left" /></svg>
+    </button>
+    <span>Página {{ page() }} de {{ pageCount() }}</span>
+    <button type="button" aria-label="Próxima página" (click)="next()" [disabled]="page() >= pageCount() || loading()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
+    </button>
+  </div>
+</div>

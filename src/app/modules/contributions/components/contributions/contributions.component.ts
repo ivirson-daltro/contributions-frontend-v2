@@ -23,6 +23,7 @@ import { PaymentMethod } from '../../dtos/payment-method.dto';
 import { ContributionsService } from '../../services/contributions.service';
 import { isStaleContribution, mutationError } from '../../services/contribution-errors';
 import { ToastService } from '../../../../core/ui/toast.service';
+import { DataPaginationComponent } from '../../../../shared/components/data-pagination/data-pagination.component';
 
 interface CalendarDay {
   date: string;
@@ -31,7 +32,7 @@ interface CalendarDay {
 
 @Component({
   selector: 'app-contributions',
-  imports: [ReactiveFormsModule, CustomConfirmComponent, ContributionFormComponent, MemberSelectComponent],
+  imports: [ReactiveFormsModule, CustomConfirmComponent, ContributionFormComponent, MemberSelectComponent, DataPaginationComponent],
   templateUrl: './contributions.component.html',
 })
 export class ContributionsComponent implements OnInit {

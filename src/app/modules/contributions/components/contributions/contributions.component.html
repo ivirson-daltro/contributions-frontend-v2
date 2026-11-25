@@ -288,43 +288,12 @@
         </p>
       }
       <div class="contributions-pagination">
-        <span
-          >{{ pageRange().start }} a {{ pageRange().end }} de {{ result.meta.total }} contribuições
-          encontradas</span
-        >
-        <div>
-          <label class="contributions-page-size">
-            <span>Por página</span>
-            <select #pageSize (change)="changePageSize(pageSize.value)">
-              @for (size of pageSizes; track size) {
-                <option [value]="size" [selected]="size === result.meta.pageSize">
-                  {{ size }}
-                </option>
-              }
-            </select>
-          </label>
-          <button
-            type="button"
-            (click)="loadList(result.meta.page - 1)"
-            [disabled]="result.meta.page <= 1"
-            aria-label="Página anterior"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <use href="icons/chevron-left.svg#chevron-left" />
-            </svg>
-          </button>
-          <span>Página {{ result.meta.page }} de {{ pages() }}</span>
-          <button
-            type="button"
-            (click)="loadList(result.meta.page + 1)"
-            [disabled]="result.meta.page >= pages()"
-            aria-label="Próxima página"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <use href="icons/chevron-right.svg#chevron-right" />
-            </svg>
-          </button>
-        </div>
+        <app-data-pagination
+          [rangeText]="pageRange().start + ' a ' + pageRange().end + ' de ' + result.meta.total + ' contribuições encontradas'"
+          [page]="result.meta.page" [pageCount]="pages()" [pageSize]="appliedFilters.pageSize"
+          [pageSizeOptions]="pageSizes" [loading]="listLoading()" pageSizeClass="contributions-page-size"
+          (pageChange)="loadList($event)" (pageSizeChange)="changePageSize($event.toString())"
+        />
       </div>
     }
   </section>

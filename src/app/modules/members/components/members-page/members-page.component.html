@@ -102,23 +102,12 @@
             </table>
           </div>
         }
-        <div class="pagination">
-          <span>{{ firstItem() }}–{{ lastItem() }} de {{ result.meta.total }} membros</span>
-          <div>
-            <label>Por página
-              <select #pageSizeSelect [value]="pageSize()" (change)="changePageSize(pageSizeSelect.value)">
-                <option value="8">8</option><option value="20">20</option><option value="50">50</option>
-              </select>
-            </label>
-            <button type="button" class="row-action" aria-label="Página anterior" (click)="changePage(page() - 1)" [disabled]="page() <= 1 || loading()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-left.svg#chevron-left" /></svg>
-            </button>
-            <span>Página {{ page() }} de {{ pageCount() }}</span>
-            <button type="button" class="row-action" aria-label="Próxima página" (click)="changePage(page() + 1)" [disabled]="page() >= pageCount() || loading()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/chevron-right.svg#chevron-right" /></svg>
-            </button>
-          </div>
-        </div>
+        <app-data-pagination
+          [rangeText]="firstItem() + '–' + lastItem() + ' de ' + result.meta.total + ' membros'"
+          [page]="page()" [pageCount]="pageCount()" [pageSize]="pageSize()"
+          [pageSizeOptions]="[8, 20, 50]" [loading]="loading()"
+          (pageChange)="changePage($event)" (pageSizeChange)="changePageSize($event.toString())"
+        />
       }
     </section>
     } @else {
@@ -135,18 +124,22 @@
           </button>
         </header>
         <div class="contributors-filters">
-          <label>
-            <span class="visually-hidden">Buscar contribuinte</span>
-            <input [formControl]="contributorSearch" maxlength="120" type="search" placeholder="Buscar por nome" />
-          </label>
-          <label>
-            <span class="visually-hidden">Ano</span>
-            <select #contributorYearSelect [value]="contributorYear()" (change)="changeContributorYear(contributorYearSelect.value)">
-              @for (year of [contributorYear() - 2, contributorYear() - 1, contributorYear(), contributorYear() + 1]; track year) {
-                <option [value]="year">{{ year }}</option>
-              }
-            </select>
-          </label>
+          <form (ngSubmit)="applyContributorFilters()">
+            <label>
+              <span class="visually-hidden">Buscar contribuinte</span>
+              <input [formControl]="contributorSearch" maxlength="120" type="search" placeholder="Buscar por nome" />
+            </label>
+            <label>
+              <span class="visually-hidden">Ano</span>
+              <select #contributorYearSelect [value]="contributorYear()" (change)="changeContributorYear(contributorYearSelect.value)">
+                @for (year of [contributorYear() - 2, contributorYear() - 1, contributorYear(), contributorYear() + 1]; track year) {
+                  <option [value]="year">{{ year }}</option>
+                }
+              </select>
+            </label>
+            <button type="submit" class="member-button primary">Filtrar</button>
+            <button type="button" class="member-button text" (click)="clearContributorFilters()">Limpar filtros</button>
+          </form>
         </div>
         @if (contributorError()) {
           <div class="list-state" role="alert">Não foi possível carregar os contribuintes.
@@ -181,14 +174,12 @@
               </table>
             </div>
           }
-          <div class="pagination">
-            <span>{{ result.meta.total }} contribuintes</span>
-            <div>
-              <button type="button" class="row-action" aria-label="Página anterior" (click)="changeContributorPage(contributorPage() - 1)" [disabled]="contributorPage() <= 1 || contributorLoading()">‹</button>
-              <span>Página {{ contributorPage() }} de {{ contributorPageCount() }}</span>
-              <button type="button" class="row-action" aria-label="Próxima página" (click)="changeContributorPage(contributorPage() + 1)" [disabled]="contributorPage() >= contributorPageCount() || contributorLoading()">›</button>
-            </div>
-          </div>
+          <app-data-pagination
+            [rangeText]="(!result.meta.total ? '0' : (contributorPage() - 1) * contributorPageSize() + 1) + ' a ' + (!result.meta.total ? '0' : (contributorPage() * contributorPageSize() > result.meta.total ? result.meta.total : contributorPage() * contributorPageSize())) + ' de ' + result.meta.total + ' membros contribuintes'"
+            [page]="contributorPage()" [pageCount]="contributorPageCount()" [pageSize]="contributorPageSize()"
+            [pageSizeOptions]="[8, 20, 50]" [loading]="contributorLoading()"
+            (pageChange)="changeContributorPage($event)" (pageSizeChange)="changeContributorPageSize($event)"
+          />
         }
       </section>
     }
