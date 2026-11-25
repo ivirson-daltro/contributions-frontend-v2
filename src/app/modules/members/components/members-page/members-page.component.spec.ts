@@ -15,7 +15,10 @@ describe('MembersPageComponent', () => {
     complement: null, neighborhood: null, city: null, state: null, consentAt: null,
     createdBy: 'other-user', createdAt: '', updatedAt: '',
   };
-  const service = { list: vi.fn(), listAll: vi.fn(), listTypes: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
+  const service = {
+    list: vi.fn(), listAll: vi.fn(), listTypes: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(),
+    contributors: vi.fn(), contributorsReport: vi.fn(),
+  };
   const toast = { error: vi.fn(), warning: vi.fn(), success: vi.fn() };
   let fixture: ComponentFixture<MembersPageComponent>;
   let element: HTMLElement;
@@ -74,6 +77,8 @@ describe('MembersPageComponent', () => {
     service.get.mockReset().mockResolvedValue(member);
     service.create.mockReset();
     service.delete.mockReset();
+    service.contributors.mockReset().mockResolvedValue({ data: [], meta: { page: 1, pageSize: 20, total: 0 } });
+    service.contributorsReport.mockReset().mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }));
     TestBed.configureTestingModule({
       imports: [MembersPageComponent],
       providers: [{ provide: MembersService, useValue: service }, { provide: ToastService, useValue: toast }],
@@ -90,6 +95,32 @@ describe('MembersPageComponent', () => {
     await vi.waitFor(() => expect(service.list).toHaveBeenLastCalledWith(
       'token', 'tenant', expect.objectContaining({ q: 'Maria', page: 1 }),
     ));
+  });
+
+  it('opens the contributors tab and loads the selected year', async () => {
+    await setup(['TENANT_ADMIN']);
+    click('Contribuintes');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(service.contributors).toHaveBeenCalledWith(
+      'token', 'tenant',
+      expect.objectContaining({ year: new Date().getFullYear(), page: 1, pageSize: 20 }),
+    );
+    expect(element.textContent).toContain('Membros contribuintes');
+  });
+
+  it('shows badges only for months with contributions', async () => {
+    service.contributors.mockResolvedValue({
+      data: [{ id: 'ana', name: 'Ana', memberType: member.memberType, months: [true, false, false, false, false, true, false, false, false, false, false, true] }],
+      meta: { page: 1, pageSize: 20, total: 1 },
+    });
+    await setup(['TENANT_ADMIN']);
+    click('Contribuintes');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const table = element.querySelector('.contributors-table')!;
+    expect([...table.querySelectorAll('th')].map((cell) => cell.textContent?.trim())).toEqual(['Nome', 'Tipo', 'Meses']);
+    expect([...table.querySelectorAll('.month-badge')].map((badge) => badge.textContent?.trim())).toEqual(['Jan', 'Jun', 'Dez']);
   });
 
   it('permits a treasurer to change only records they created', async () => {

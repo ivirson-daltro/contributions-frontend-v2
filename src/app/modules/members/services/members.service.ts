@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Member, MemberList, MemberPayload, MemberQuery, MemberType } from '../dtos/member.dto';
+import { Contributor, ContributorList, ContributorQuery, Member, MemberList, MemberPayload, MemberQuery, MemberType } from '../dtos/member.dto';
 import { MemberLookup } from '../../../shared/dtos/member-lookup.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -54,6 +54,30 @@ export class MembersService {
   delete(accessToken: string, tenantId: string, id: string): Promise<{ id: string }> {
     return firstValueFrom(this.http.delete<{ id: string }>(`${this.baseUrl}/members/${encodeURIComponent(id)}`, {
       headers: this.headers(accessToken, tenantId),
+    }));
+  }
+
+  contributors(accessToken: string, tenantId: string, query: ContributorQuery): Promise<ContributorList> {
+    let params = new HttpParams()
+      .set('year', query.year)
+      .set('page', query.page)
+      .set('pageSize', query.pageSize)
+      .set('sort', query.sort)
+      .set('order', query.order);
+    if (query.q?.trim()) params = params.set('q', query.q.trim());
+    return firstValueFrom(this.http.get<ContributorList>(`${this.baseUrl}/members/contributors/year`, {
+      headers: this.headers(accessToken, tenantId), params,
+    }));
+  }
+
+  contributorsReport(accessToken: string, tenantId: string, query: Omit<ContributorQuery, 'page' | 'pageSize'>): Promise<Blob> {
+    let params = new HttpParams()
+      .set('year', query.year)
+      .set('sort', query.sort)
+      .set('order', query.order);
+    if (query.q?.trim()) params = params.set('q', query.q.trim());
+    return firstValueFrom(this.http.get(`${this.baseUrl}/members/contributors/year/report`, {
+      headers: this.headers(accessToken, tenantId), params, responseType: 'blob',
     }));
   }
 

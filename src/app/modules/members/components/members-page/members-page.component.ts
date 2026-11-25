@@ -8,7 +8,7 @@ import { TenantContextService } from '../../../../core/tenant/services/tenant-co
 import { canManageAllMemberFields } from '../../../../core/tenant/tenant-access';
 import { canManageMembers } from '../../../../core/tenant/tenant-access';
 import { ToastService } from '../../../../core/ui/toast.service';
-import { Member, MemberList, MemberPayload, MemberStatus, MemberStatusFilter, MemberSummary, MemberType } from '../../dtos/member.dto';
+import { ContributorList, Member, MemberList, MemberPayload, MemberStatus, MemberStatusFilter, MemberSummary, MemberType } from '../../dtos/member.dto';
 import { MembersService } from '../../services/members.service';
 import { MemberFormComponent, MemberFormSubmission } from '../member-form/member-form.component';
 import { MemberSelectComponent } from '../../../../shared/components/member-select/member-select.component';
@@ -16,6 +16,7 @@ import { MemberLookup } from '../../../../shared/dtos/member-lookup.dto';
 import { formatPhoneMask } from '../../../../shared/utils/phone-mask';
 
 type MembersView = 'list' | 'detail' | 'create' | 'edit';
+type MembersTab = 'members' | 'contributors';
 
 @Component({
   selector: 'app-members-page',
@@ -52,6 +53,17 @@ export class MembersPageComponent implements OnInit {
   protected readonly tenant = this.context.current;
   protected readonly fullAccess = computed(() => canManageAllMemberFields(this.tenant()?.membership.roles ?? []));
   protected readonly view = signal<MembersView>('list');
+  protected readonly tab = signal<MembersTab>('members');
+  protected readonly contributorList = signal<ContributorList | null>(null);
+  protected readonly contributorLoading = signal(false);
+  protected readonly contributorError = signal(false);
+  protected readonly contributorReportLoading = signal(false);
+  protected readonly contributorYear = signal(new Date().getFullYear());
+  protected readonly contributorPage = signal(1);
+  protected readonly contributorPageSize = signal(20);
+  protected readonly contributorPageCount = computed(() => Math.max(1, Math.ceil((this.contributorList()?.meta.total ?? 0) / this.contributorPageSize())));
+  protected readonly contributorSearch = new FormControl('', { nonNullable: true });
+  protected readonly monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   protected readonly list = signal<MemberList | null>(null);
   protected readonly types = signal<MemberType[]>([]);
   protected readonly selected = signal<Member | null>(null);
@@ -98,6 +110,11 @@ export class MembersPageComponent implements OnInit {
       this.pendingCreate = null;
       this.duplicates.set(null);
       this.membersRequest = null;
+      this.tab.set('members');
+      this.contributorList.set(null);
+      this.contributorSearch.setValue('', { emitEvent: false });
+      this.contributorYear.set(new Date().getFullYear());
+      this.contributorPage.set(1);
       this.filters.reset({ q: '', memberTypeId: '', status: 'ACTIVE' }, { emitEvent: false });
       void this.loadTypes();
       void this.loadList();
@@ -109,6 +126,90 @@ export class MembersPageComponent implements OnInit {
       this.page.set(1);
       void this.loadList();
     });
+    this.contributorSearch.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.contributorPage.set(1);
+      void this.loadContributors();
+    });
+  }
+
+  protected changeTab(tab: MembersTab): void {
+    if (this.tab() === tab) return;
+    this.tab.set(tab);
+    if (tab === 'contributors') void this.loadContributors();
+  }
+
+  protected async loadContributors(): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant) return;
+    this.contributorLoading.set(true);
+    this.contributorError.set(false);
+    try {
+      const result = await this.service.contributors(tenant.accessToken, tenant.membership.tenantId, {
+        year: this.contributorYear(),
+        q: this.contributorSearch.value.trim(),
+        page: this.contributorPage(),
+        pageSize: this.contributorPageSize(),
+        sort: 'name',
+        order: 'asc',
+      });
+      if (this.tenant() !== tenant) return;
+      this.contributorList.set(result);
+    } catch {
+      if (this.tenant() !== tenant) return;
+      this.contributorList.set(null);
+      this.contributorError.set(true);
+      this.toast.error('Não foi possível carregar os contribuintes.');
+    } finally {
+      if (this.tenant() === tenant) this.contributorLoading.set(false);
+    }
+  }
+
+  protected changeContributorYear(year: string): void {
+    const parsed = Number(year);
+    if (!/^\d{4}$/.test(year) || parsed < 1 || parsed > 9998) return;
+    this.contributorYear.set(parsed);
+    this.contributorPage.set(1);
+    void this.loadContributors();
+  }
+
+  protected changeContributorPage(page: number): void {
+    if (page < 1 || page > this.contributorPageCount() || this.contributorLoading()) return;
+    this.contributorPage.set(page);
+    void this.loadContributors();
+  }
+
+  protected async downloadContributorReport(): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant || this.contributorReportLoading()) return;
+    this.contributorReportLoading.set(true);
+    try {
+      const pdf = await this.service.contributorsReport(tenant.accessToken, tenant.membership.tenantId, {
+        year: this.contributorYear(),
+        q: this.contributorSearch.value.trim(),
+        sort: 'name',
+        order: 'asc',
+      });
+      if (this.tenant() !== tenant) return;
+      if (!pdf.size || !pdf.type.toLowerCase().startsWith('application/pdf')) {
+        throw new Error('Resposta do relatório não é um PDF válido.');
+      }
+      const url = URL.createObjectURL(pdf);
+      const link = document.createElement('a');
+      try {
+        link.href = url;
+        link.download = `contribuintes-${this.contributorYear()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+      } finally {
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      }
+      this.toast.success('Relatório gerado.');
+    } catch {
+      if (this.tenant() === tenant) this.toast.error('Não foi possível gerar o relatório anual.');
+    } finally {
+      if (this.tenant() === tenant) this.contributorReportLoading.set(false);
+    }
   }
 
   protected async loadTypes(): Promise<void> {

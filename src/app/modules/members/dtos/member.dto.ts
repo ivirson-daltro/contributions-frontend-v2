@@ -67,3 +67,24 @@ export interface MemberList {
   data: MemberSummary[];
   meta: { page: number; pageSize: number; total: number };
 }
+
+export interface Contributor {
+  id: string;
+  name: string;
+  memberType: { id: string; description: string };
+  months: boolean[];
+}
+
+export interface ContributorList {
+  data: Contributor[];
+  meta: { page: number; pageSize: number; total: number };
+}
+
+export interface ContributorQuery {
+  year: number;
+  q?: string;
+  page: number;
+  pageSize: number;
+  sort: 'name' | 'type';
+  order: 'asc' | 'desc';
+}

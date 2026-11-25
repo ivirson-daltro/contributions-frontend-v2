@@ -12,6 +12,12 @@
       </button>
     </header>
 
+    <nav class="members-tabs" aria-label="Seções de membros">
+      <button type="button" [class.active]="tab() === 'members'" (click)="changeTab('members')">Todos os membros</button>
+      <button type="button" [class.active]="tab() === 'contributors'" (click)="changeTab('contributors')">Contribuintes</button>
+    </nav>
+
+    @if (tab() === 'members') {
     @if (catalogError()) {
       <p class="notice" role="alert">Não foi possível carregar os tipos de membro.
         <button type="button" class="text-action" (click)="loadTypes()">Tentar novamente</button>
@@ -115,6 +121,77 @@
         </div>
       }
     </section>
+    } @else {
+      <section class="member-card contributors-list" aria-labelledby="contributors-title">
+        <header class="contributors-heading">
+          <div>
+            <h2 id="contributors-title">Membros contribuintes</h2>
+            <p>Contribuições registradas ao longo do ano.</p>
+          </div>
+          <button type="button" class="member-button primary" (click)="downloadContributorReport()"
+            [disabled]="contributorLoading() || contributorReportLoading()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="icons/pdf.svg#pdf" /></svg>
+            {{ contributorReportLoading() ? 'Gerando...' : 'Gerar relatório' }}
+          </button>
+        </header>
+        <div class="contributors-filters">
+          <label>
+            <span class="visually-hidden">Buscar contribuinte</span>
+            <input [formControl]="contributorSearch" maxlength="120" type="search" placeholder="Buscar por nome" />
+          </label>
+          <label>
+            <span class="visually-hidden">Ano</span>
+            <select #contributorYearSelect [value]="contributorYear()" (change)="changeContributorYear(contributorYearSelect.value)">
+              @for (year of [contributorYear() - 2, contributorYear() - 1, contributorYear(), contributorYear() + 1]; track year) {
+                <option [value]="year">{{ year }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        @if (contributorError()) {
+          <div class="list-state" role="alert">Não foi possível carregar os contribuintes.
+            <button type="button" class="text-action" (click)="loadContributors()">Tentar novamente</button>
+          </div>
+        } @else if (contributorLoading() && !contributorList()) {
+          <p class="list-state" role="status">Carregando contribuintes...</p>
+        } @else if (contributorList(); as result) {
+          @if (!result.data.length) {
+            <p class="list-state">Nenhum membro contribuinte encontrado para o ano selecionado.</p>
+          } @else {
+            <div class="table-scroll">
+              <table class="contributors-table">
+                <thead>
+                  <tr>
+                    <th>Nome</th><th>Tipo</th><th>Meses</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (contributor of result.data; track contributor.id) {
+                    <tr>
+                      <td>{{ contributor.name }}</td>
+                      <td>{{ contributor.memberType.description }}</td>
+                      <td><div class="month-badges">
+                        @for (present of contributor.months; track $index) {
+                          @if (present) { <span class="month-badge">{{ monthLabels[$index] }}</span> }
+                        }
+                      </div></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <div class="pagination">
+            <span>{{ result.meta.total }} contribuintes</span>
+            <div>
+              <button type="button" class="row-action" aria-label="Página anterior" (click)="changeContributorPage(contributorPage() - 1)" [disabled]="contributorPage() <= 1 || contributorLoading()">‹</button>
+              <span>Página {{ contributorPage() }} de {{ contributorPageCount() }}</span>
+              <button type="button" class="row-action" aria-label="Próxima página" (click)="changeContributorPage(contributorPage() + 1)" [disabled]="contributorPage() >= contributorPageCount() || contributorLoading()">›</button>
+            </div>
+          </div>
+        }
+      </section>
+    }
   }
 </div>
 <app-member-form [member]="selected()" [types]="types()" [fullAccess]="fullAccess()"

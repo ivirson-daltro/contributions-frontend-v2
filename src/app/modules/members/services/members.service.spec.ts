@@ -67,4 +67,29 @@ describe('MembersService', () => {
     del.flush({ id: 'member' });
     await remove;
   });
+
+  it('lists and downloads the annual contributor report', async () => {
+    const list = service.contributors('token', 'tenant', {
+      year: 2026, q: 'Ana', page: 2, pageSize: 20, sort: 'name', order: 'asc',
+    });
+    const listRequest = http.expectOne((req) =>
+      req.url === `${environment.apiUrl}/members/contributors/year`,
+    );
+    expect(listRequest.request.params.get('year')).toBe('2026');
+    expect(listRequest.request.params.get('q')).toBe('Ana');
+    expect(listRequest.request.params.get('page')).toBe('2');
+    listRequest.flush({ data: [], meta: { page: 2, pageSize: 20, total: 0 } });
+    await expect(list).resolves.toMatchObject({ meta: { page: 2 } });
+
+    const report = service.contributorsReport('token', 'tenant', {
+      year: 2026, q: 'Ana', sort: 'name', order: 'asc',
+    });
+    const reportRequest = http.expectOne((req) =>
+      req.url === `${environment.apiUrl}/members/contributors/year/report`,
+    );
+    expect(reportRequest.request.responseType).toBe('blob');
+    expect(reportRequest.request.params.get('year')).toBe('2026');
+    reportRequest.flush(new Blob(['pdf'], { type: 'application/pdf' }));
+    await expect(report).resolves.toBeInstanceOf(Blob);
+  });
 });
