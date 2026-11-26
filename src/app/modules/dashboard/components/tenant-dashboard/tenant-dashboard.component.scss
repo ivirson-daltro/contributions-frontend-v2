@@ -8,8 +8,8 @@ app-tenant-layout {
   display: flex;
   min-height: 100vh;
   min-height: 100svh;
-  background: #f6f7fa;
-  color: #202438;
+  background: var(--color-background-page);
+  color: var(--color-text-primary);
   color-scheme: light;
   font-family: Inter, 'Segoe UI', Arial, sans-serif;
 }
@@ -70,8 +70,8 @@ app-tenant-layout {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: #f0edff;
-  color: #6251df;
+  background: var(--color-brand-subtle);
+  color: var(--color-brand-foreground);
   font-size: 0.875rem;
   font-weight: 650;
   text-transform: uppercase;
@@ -1371,8 +1371,6 @@ app-tenant-layout {
 }
 
 .tenant-dashboard.dark-theme {
-  background: #151823;
-  color: #eef0f7;
   color-scheme: dark;
 }
 
@@ -1413,7 +1411,7 @@ app-tenant-layout {
 }
 
 .dark-theme .tenant-main {
-  background: #151823;
+  background: var(--color-background-page);
 }
 
 .dark-theme .tenant-topbar {

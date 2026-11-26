@@ -56,6 +56,7 @@ describe('Tenant routes', () => {
       balance: { month: '205.50', accumulated: null },
       members: { active: 248, contributorsMonth: 86 },
       constructionOffering: { total: '2150.00' },
+      customCard: { contributionTypeId: null, contributionTypeName: null, total: null, contributionTypes: [] },
       payables: { overdueCount: 0, next7DaysCount: 0, overdue: [], next7Days: [] },
     });
     dashboard.getSeries.mockReset().mockResolvedValue({

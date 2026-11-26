@@ -46,6 +46,12 @@ export interface DashboardSummaryResponse {
     total: DashboardMoney;
     count: number;
   };
+  customCard: {
+    contributionTypeId: string | null;
+    contributionTypeName: string | null;
+    total: DashboardMoney | null;
+    contributionTypes: { id: string; description: string }[];
+  };
   payables: {
     overdueCount: number;
     next7DaysCount: number;

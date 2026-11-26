@@ -107,14 +107,23 @@
           </article>
           <article class="overview-card">
             <span class="card-label">
-              Saldo acumulado
+              @if (summary()?.customCard?.contributionTypeName; as typeName) {
+                {{ typeName }}
+              } @else {
+                Saldo acumulado
+              }
               <svg class="card-icon card-icon-balance" viewBox="0 0 24 24" aria-hidden="true">
                 <use href="icons/info.svg#info" />
               </svg>
             </span>
             @if (summary(); as data) {
-              <strong>{{ formatNullableCurrency(data.balance.accumulated) }}</strong>
-              <span class="card-caption">Acumulado · saldo parcial</span>
+              @if (data.customCard.contributionTypeId) {
+                <strong>{{ formatNullableCurrency(data.customCard.total) }}</strong>
+                <span class="card-caption">Total recebido acumulado · sem descontar despesas</span>
+              } @else {
+                <strong>{{ formatNullableCurrency(data.balance.accumulated) }}</strong>
+                <span class="card-caption">Acumulado · saldo parcial</span>
+              }
             } @else {
               <strong>—</strong>
               <span class="card-caption">Saldo de todos os períodos</span>

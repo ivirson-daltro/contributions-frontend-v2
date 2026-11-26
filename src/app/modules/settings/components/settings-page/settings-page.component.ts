@@ -5,6 +5,7 @@ import { TenantContextService } from '../../../../core/tenant/services/tenant-co
 import { ToastService } from '../../../../core/ui/toast.service';
 import { CatalogItem, CatalogKind, CatalogPayload, ChurchSettings, FeeRule, LogoTheme, Preferences, SettingsService } from '../../services/settings.service';
 import { cnpjDigits, formatCnpj } from '../../../../shared/utils/cnpj-mask';
+import { TenantDashboardService } from '../../../dashboard/services/tenant-dashboard.service';
 
 type Tab = 'church' | 'preferences' | 'catalogs' | 'fees';
 
@@ -18,18 +19,23 @@ type Tab = 'church' | 'preferences' | 'catalogs' | 'fees';
 export class SettingsPageComponent {
   private readonly context = inject(TenantContextService);
   private readonly service = inject(SettingsService);
+  private readonly dashboardService = inject(TenantDashboardService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   constructor() {
     this.destroyRef.onDestroy(() => this.clearLogoPreview());
   }
   private request = 0;
+  private dashboardCardRequest = 0;
   protected readonly tenant = this.context.current;
   protected readonly tab = signal<Tab>('church');
   protected readonly formatCnpj = formatCnpj;
   protected readonly loading = signal(false);
   protected readonly failed = signal(false);
   protected readonly saving = signal(false);
+  protected readonly dashboardCardState = signal<'loading' | 'ready' | 'error'>('loading');
+  protected readonly dashboardCardSelection = signal('');
+  protected readonly savedDashboardCard = signal('');
   protected readonly cancellationFormOpen = signal(false);
   protected cancellationReason = '';
   protected readonly lightLogoPreview = signal<string | null>(null);
@@ -74,8 +80,12 @@ export class SettingsPageComponent {
     const tenant = this.tenant();
     untracked(() => {
       this.request++;
+      this.dashboardCardRequest++;
       this.failed.set(false);
       this.saving.set(false);
+      this.dashboardCardState.set('loading');
+      this.dashboardCardSelection.set('');
+      this.savedDashboardCard.set('');
       this.catalogFormOpen.set(false);
       this.church = { name: '', document: null, timezone: '' };
       this.fees = [];
@@ -84,6 +94,7 @@ export class SettingsPageComponent {
       if (tenant) {
         void this.load();
         void this.loadLogo();
+        void this.loadDashboardCard();
       }
     });
   });
@@ -132,6 +143,33 @@ export class SettingsPageComponent {
     await this.perform('Preferências atualizadas.', async (token, tenantId, current) => {
       const result = await this.service.savePreferences(token, tenantId, this.preferences);
       if (current()) this.preferences = result;
+    });
+  }
+
+  protected async loadDashboardCard(): Promise<void> {
+    const tenant = this.tenant();
+    if (!tenant) return;
+    const request = ++this.dashboardCardRequest;
+    this.dashboardCardState.set('loading');
+    try {
+      const { customCard } = await this.dashboardService.getSummary(tenant.accessToken, tenant.membership.tenantId);
+      if (this.destroyRef.destroyed || this.tenant() !== tenant || request !== this.dashboardCardRequest) return;
+      const selection = customCard.contributionTypeId ?? '';
+      this.savedDashboardCard.set(selection);
+      this.dashboardCardSelection.set(selection);
+      this.dashboardCardState.set('ready');
+    } catch {
+      if (!this.destroyRef.destroyed && this.tenant() === tenant && request === this.dashboardCardRequest) {
+        this.dashboardCardState.set('error');
+      }
+    }
+  }
+
+  protected async saveDashboardCard(): Promise<void> {
+    const selection = this.dashboardCardSelection();
+    await this.perform('Indicador atualizado para toda a igreja.', async (token, tenantId, current) => {
+      await this.dashboardService.updateCard(token, tenantId, selection || null);
+      if (current()) this.savedDashboardCard.set(selection);
     });
   }
 

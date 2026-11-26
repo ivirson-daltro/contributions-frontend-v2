@@ -23,10 +23,10 @@
   box-sizing: border-box;
   height: 36px;
   padding: 0 40px 0 10px;
-  border: 1px solid #e1e4ed;
+  border: 1px solid var(--color-border-default);
   border-radius: 5px;
-  background: #fff;
-  color: #30354a;
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
   font: inherit;
   font-size: 0.6875rem;
 }
@@ -40,7 +40,7 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #777b8c;
+  color: var(--color-text-secondary);
   cursor: pointer;
   transform: translateY(-50%);
 }
@@ -54,11 +54,11 @@
   max-height: 180px;
   margin-top: 4px;
   overflow-y: auto;
-  border: 1px solid #e6e8ef;
+  border: 1px solid var(--color-border-default);
   border-radius: 7px;
-  background: #fff;
+  background: var(--color-surface-default);
   box-shadow: 0 10px 24px rgb(36 40 61 / 12%);
-  color: #25283d;
+  color: var(--color-text-primary);
 }
 
 .member-select-options button {
@@ -69,7 +69,7 @@
   gap: 12px;
   padding: 9px 10px;
   border: 0;
-  border-bottom: 1px solid #f0eff5;
+  border-bottom: 1px solid var(--color-border-default);
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -80,37 +80,12 @@
 
 .member-select-options button:hover,
 .member-select-options button:focus-visible {
-  background: #f0edff;
+  background: var(--color-brand-subtle);
 }
 
 .member-select-state {
   display: block;
   padding: 10px;
-  color: #777b8c;
+  color: var(--color-text-secondary);
   font-size: 0.8125rem;
-}
-
-:host-context(.dark-theme) .member-select-options {
-  border-color: #3a4055;
-  background: #202435;
-  color: #f3f2fa;
-}
-
-:host-context(.dark-theme) .member-select-input input {
-  border-color: #4c5571;
-  background: #202435;
-  color: #f3f2fa;
-}
-
-:host-context(.dark-theme) .member-select-options button {
-  border-bottom-color: #3a4055;
-}
-
-:host-context(.dark-theme) .member-select-options button:hover,
-:host-context(.dark-theme) .member-select-options button:focus-visible {
-  background: #302c49;
-}
-
-:host-context(.dark-theme) .member-select-state {
-  color: #aeb4c7;
 }

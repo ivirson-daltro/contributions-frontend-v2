@@ -288,6 +288,12 @@ td button + button {
   color: #6251df;
   background: #f7f7fb;
 }
+.export-button:disabled {
+  border-color: var(--color-disabled-background);
+  background: var(--color-disabled-background);
+  color: var(--color-disabled-indicator);
+  opacity: 1;
+}
 .cancellation-panel textarea {
   width: 100%;
   box-sizing: border-box;

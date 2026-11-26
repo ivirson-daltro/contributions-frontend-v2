@@ -55,6 +55,10 @@ describe('TenantDashboardComponent', () => {
     byKind: { week: {}, previousWeek: {}, month: {} },
     members: { active: 248, contributorsMonth: 86 },
     constructionOffering: { total: '2150.00', count: 12 },
+    customCard: {
+      contributionTypeId: null, contributionTypeName: null, total: null,
+      contributionTypes: [{ id: 'type-1', description: 'Missões' }],
+    },
     payables: {
       overdueCount: 1,
       next7DaysCount: 1,
@@ -133,6 +137,39 @@ describe('TenantDashboardComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.overview-card')).toHaveLength(4);
     expect(text).toContain('Evolução financeira');
     expect(text).toContain('O que você precisa fazer?');
+  });
+
+  it('shows the configured card without a selector for administrators', async () => {
+    dashboardService.getSummary.mockResolvedValue({
+      ...summary,
+      customCard: { ...summary.customCard, contributionTypeId: 'type-1', contributionTypeName: 'Missões', total: '340.00' },
+    });
+    const fixture = TestBed.createComponent(TenantDashboardComponent);
+    fixture.detectChanges();
+    await waitForSummary(fixture);
+    const card = (fixture.nativeElement as HTMLElement).querySelectorAll('.overview-card')[3];
+    expect(card.textContent).toContain('Missões');
+    expect(card.textContent).toContain('R$ 340,00');
+    expect(card.textContent).toContain('sem descontar despesas');
+    expect(card.querySelector('select')).toBeNull();
+  });
+
+  it('shows the shared choice without allowing non-admins to change it', async () => {
+    TestBed.inject(TenantContextService).current.set({
+      accessToken: 'access-token',
+      userId: 'user-id',
+      membership: { tenantId: 'tenant-id', slug: 'igreja-central', name: 'Igreja Central', status: 'ACTIVE', roles: ['TREASURER'] },
+    });
+    dashboardService.getSummary.mockResolvedValue({
+      ...summary,
+      customCard: { ...summary.customCard, contributionTypeId: 'type-1', contributionTypeName: 'Missões', total: '340.00' },
+    });
+    const fixture = TestBed.createComponent(TenantDashboardComponent);
+    fixture.detectChanges();
+    await waitForSummary(fixture);
+    const card = (fixture.nativeElement as HTMLElement).querySelectorAll('.overview-card')[3];
+    expect(card.textContent).toContain('R$ 340,00');
+    expect(card.querySelector('select')).toBeNull();
   });
 
   it('shows decorative icons on the dashboard actions while keeping fee calculation disabled', async () => {

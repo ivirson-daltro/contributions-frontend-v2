@@ -5,6 +5,7 @@ import { TenantContextService } from '../../../../core/tenant/services/tenant-co
 import { ToastService } from '../../../../core/ui/toast.service';
 import { SettingsService } from '../../services/settings.service';
 import { SettingsPageComponent } from './settings-page.component';
+import { TenantDashboardService } from '../../../dashboard/services/tenant-dashboard.service';
 
 describe('SettingsPageComponent', () => {
   const church = { name: 'Igreja Central', document: null, timezone: 'America/Sao_Paulo' };
@@ -16,6 +17,7 @@ describe('SettingsPageComponent', () => {
     createCatalog: vi.fn(), deleteCatalog: vi.fn(), saveFees: vi.fn(), requestCancellation: vi.fn(),
   };
   const toast = { success: vi.fn(), error: vi.fn() };
+  const dashboard = { getSummary: vi.fn(), updateCard: vi.fn() };
   let fixture: ComponentFixture<SettingsPageComponent>;
   let element: HTMLElement;
 
@@ -35,9 +37,15 @@ describe('SettingsPageComponent', () => {
     service.listCatalog.mockReset().mockResolvedValue([]);
     service.saveChurch.mockReset().mockResolvedValue(church);
     service.uploadLogo.mockReset().mockResolvedValue(undefined);
+    dashboard.getSummary.mockReset().mockResolvedValue({ customCard: { contributionTypeId: null } });
+    dashboard.updateCard.mockReset().mockResolvedValue(undefined);
     TestBed.configureTestingModule({
       imports: [SettingsPageComponent],
-      providers: [{ provide: SettingsService, useValue: service }, { provide: ToastService, useValue: toast }],
+      providers: [
+        { provide: SettingsService, useValue: service },
+        { provide: TenantDashboardService, useValue: dashboard },
+        { provide: ToastService, useValue: toast },
+      ],
     });
     TestBed.inject(TenantContextService).current.set({
       accessToken: 'token', userId: 'user',
@@ -60,6 +68,112 @@ describe('SettingsPageComponent', () => {
     await fixture.whenStable();
     expect(service.saveChurch).toHaveBeenCalledWith('token', 'tenant', { name: church.name, document: church.document });
     expect(toast.success).toHaveBeenCalled();
+  });
+
+  it('saves the dashboard indicator in preferences and restores the default', async () => {
+    service.listCatalog.mockImplementation((_token, _tenant, kind) => Promise.resolve(kind === 'contribution-types'
+      ? [{ id: 'type-1', description: 'Missões', active: true, usageCount: 0 }]
+      : []));
+    const context = TestBed.inject(TenantContextService);
+    context.current.set({ ...context.current()! });
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('[name="name"]')).not.toBeNull();
+    });
+    click('Preferências');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const select = element.querySelector<HTMLSelectElement>('[name="dashboardCard"]')!;
+    expect(select.value).toBe('');
+    select.value = 'type-1';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(dashboard.updateCard).not.toHaveBeenCalled();
+    click('Salvar indicador');
+    await vi.waitFor(() => expect(dashboard.updateCard).toHaveBeenCalledWith('token', 'tenant', 'type-1'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(toast.success).toHaveBeenCalledWith('Indicador atualizado para toda a igreja.');
+
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    click('Salvar indicador');
+    await vi.waitFor(() => expect(dashboard.updateCard).toHaveBeenCalledWith('token', 'tenant', null));
+  });
+
+  it('shows the current inactive type and reports a failed save', async () => {
+    dashboard.getSummary.mockResolvedValue({ customCard: { contributionTypeId: 'inactive' } });
+    service.listCatalog.mockImplementation((_token, _tenant, kind) => Promise.resolve(kind === 'contribution-types'
+      ? [{ id: 'inactive', description: 'Missões', active: false, usageCount: 1 }]
+      : []));
+    const context = TestBed.inject(TenantContextService);
+    context.current.set({ ...context.current()! });
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('[name="name"]')).not.toBeNull();
+    });
+    click('Preferências');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const select = element.querySelector<HTMLSelectElement>('[name="dashboardCard"]')!;
+    expect(select.value).toBe('inactive');
+    expect(select.selectedOptions[0].disabled).toBe(true);
+    dashboard.updateCard.mockRejectedValueOnce(new Error('Unavailable'));
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    click('Salvar indicador');
+    await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith('Não foi possível salvar. Tente novamente.'));
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('allows retrying a failed dashboard indicator load', async () => {
+    dashboard.getSummary.mockRejectedValueOnce(new Error('Unavailable'));
+    const context = TestBed.inject(TenantContextService);
+    context.current.set({ ...context.current()! });
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('[name="name"]')).not.toBeNull();
+    });
+    click('Preferências');
+    expect(element.textContent).toContain('Não foi possível carregar o indicador do painel.');
+    click('Tentar novamente');
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('[name="dashboardCard"]')).not.toBeNull();
+    });
+  });
+
+  it('ignores a dashboard indicator response from a previous church', async () => {
+    let resolveOld!: (value: { customCard: { contributionTypeId: string | null } }) => void;
+    dashboard.getSummary.mockImplementation((_token, tenant) => tenant === 'old'
+      ? new Promise((resolve) => { resolveOld = resolve; })
+      : Promise.resolve({ customCard: { contributionTypeId: 'type-2' } }));
+    service.listCatalog.mockImplementation((_token, _tenant, kind) => Promise.resolve(kind === 'contribution-types'
+      ? [{ id: 'type-2', description: 'Dízimo', active: true, usageCount: 0 }]
+      : []));
+    const context = TestBed.inject(TenantContextService);
+    const original = context.current()!;
+    context.current.set({ ...original, membership: { ...original.membership, tenantId: 'old' } });
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(resolveOld).toBeDefined());
+    context.current.set({ ...original, membership: { ...original.membership, tenantId: 'new' } });
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('[name="name"]')).not.toBeNull();
+    });
+    click('Preferências');
+    await fixture.whenStable();
+    resolveOld({ customCard: { contributionTypeId: null } });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.querySelector<HTMLSelectElement>('[name="dashboardCard"]')?.value).toBe('type-2');
   });
 
   it('uploads a valid logo and refreshes the layout; rejects invalid files', async () => {

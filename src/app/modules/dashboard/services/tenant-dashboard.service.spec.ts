@@ -55,6 +55,7 @@ describe('TenantDashboardService', () => {
       byKind: { week: {}, previousWeek: {}, month: {} },
       members: { active: 0, contributorsMonth: 0 },
       constructionOffering: { total: '0.00', count: 0 },
+      customCard: { contributionTypeId: null, contributionTypeName: null, total: null, contributionTypes: [] },
       payables: {
         overdueCount: 0,
         next7DaysCount: 0,
@@ -96,5 +97,24 @@ describe('TenantDashboardService', () => {
     request.flush(response);
 
     await expect(result).resolves.toEqual(response);
+  });
+
+  it('updates the church-wide card using the selected tenant', async () => {
+    const result = service.updateCard('session-token', 'tenant-id', 'type-id');
+    const request = http.expectOne('http://localhost:3000/v1/dashboard/card');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.headers.get('X-Tenant-Id')).toBe('tenant-id');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer session-token');
+    expect(request.request.body).toEqual({ contributionTypeId: 'type-id' });
+    request.flush({ contributionTypeId: 'type-id' });
+    await result;
+  });
+
+  it('restores the default card by sending a null contribution type', async () => {
+    const result = service.updateCard('session-token', 'tenant-id', null);
+    const request = http.expectOne('http://localhost:3000/v1/dashboard/card');
+    expect(request.request.body).toEqual({ contributionTypeId: null });
+    request.flush({ contributionTypeId: null });
+    await result;
   });
 });

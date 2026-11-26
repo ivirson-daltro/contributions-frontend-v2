@@ -18,6 +18,18 @@ export class TenantDashboardService {
     );
   }
 
+  updateCard(
+    accessToken: string,
+    tenantId: string,
+    contributionTypeId: string | null,
+  ): Promise<{ contributionTypeId: string | null }> {
+    return firstValueFrom(
+      this.http.put<{ contributionTypeId: string | null }>(`${this.dashboardUrl}/card`, { contributionTypeId }, {
+        headers: this.authorization(accessToken, tenantId),
+      }),
+    );
+  }
+
   getSeries(
     accessToken: string,
     tenantId: string,

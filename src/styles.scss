@@ -8,18 +8,12 @@ table td.table-actions {
 
 table thead th {
   height: 44px;
-  background: #f5f6fa;
-  color: #737b96;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
   font-size: 0.625rem;
   font-weight: 500;
   vertical-align: middle;
   white-space: nowrap;
-}
-
-.dark-theme table thead th {
-  background: #30364a;
-  color: #c1c5d4;
-  border-color: #454c63;
 }
 
 input:not([type='checkbox']):not([type='radio']):not([type='file']),
@@ -29,10 +23,10 @@ textarea {
   min-width: 0;
   height: 36px;
   padding: 0 10px;
-  border: 1px solid #e1e4ed;
+  border: 1px solid var(--color-border-default);
   border-radius: 5px;
-  background: #fff;
-  color: #30354a;
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
   font: inherit;
   font-size: 0.6875rem;
 }
@@ -47,20 +41,130 @@ textarea {
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid #a99eff;
+  outline: 3px solid var(--color-brand-foreground);
   outline-offset: 2px;
-  border-color: #6251df;
-}
-
-.dark-theme input:not([type='checkbox']):not([type='radio']):not([type='file']),
-.dark-theme select,
-.dark-theme textarea {
-  border-color: #4c5571;
-  background: #202435;
-  color: #f3f2fa;
+  border-color: var(--color-brand-foreground);
 }
 
 :root {
+  --color-neutral-000: #ffffff;
+  --color-neutral-030: #fcfbff;
+  --color-neutral-060: #f6f7fb;
+  --color-neutral-080: #f6f7fa;
+  --color-neutral-110: #fff6e6;
+  --color-neutral-140: #f2f4fb;
+  --color-neutral-170: #eaf7f1;
+  --color-neutral-190: #fdeded;
+  --color-neutral-220: #eef0f6;
+  --color-neutral-250: #eceef6;
+  --color-neutral-280: #efecff;
+  --color-neutral-310: #eceef3;
+  --color-neutral-330: #e9eaf2;
+  --color-neutral-360: #e6e8f0;
+  --color-neutral-390: #e2ddfb;
+  --color-neutral-420: #deddea;
+  --color-neutral-440: #d2cbe7;
+  --color-neutral-470: #c8ccd8;
+  --color-neutral-500: #b4bcd0;
+  --color-neutral-530: #a5aaba;
+  --color-neutral-560: #697086;
+  --color-neutral-580: #42475f;
+  --color-neutral-610: #383e56;
+  --color-neutral-640: #453927;
+  --color-neutral-670: #31364a;
+  --color-neutral-690: #383050;
+  --color-neutral-720: #4b2b36;
+  --color-neutral-750: #25273a;
+  --color-neutral-780: #28243e;
+  --color-neutral-810: #202438;
+  --color-neutral-830: #202435;
+  --color-neutral-860: #1b1a2c;
+  --color-neutral-890: #151824;
+  --color-neutral-920: #17152c;
+  --color-neutral-940: #0d101a;
+  --color-neutral-970: #080a12;
+  --color-neutral-1000: #000000;
+  --color-violet-000: #d9d0ff;
+  --color-violet-050: #d8d0ff;
+  --color-violet-100: #d8d0f5;
+  --color-violet-140: #cec7f3;
+  --color-violet-190: #c9bceb;
+  --color-violet-240: #c4b9e5;
+  --color-violet-290: #bcaeff;
+  --color-violet-330: #b8acea;
+  --color-violet-380: #b6a8ef;
+  --color-violet-430: #9ba7c2;
+  --color-violet-480: #9e8df5;
+  --color-violet-520: #8a7baf;
+  --color-violet-570: #66718b;
+  --color-violet-620: #716b99;
+  --color-violet-670: #6f5bcd;
+  --color-violet-710: #5b6581;
+  --color-violet-760: #6453d8;
+  --color-violet-810: #615078;
+  --color-violet-860: #413767;
+  --color-violet-900: #392e5c;
+  --color-violet-950: #342e51;
+  --color-violet-1000: #29204d;
+  --color-green-000: #8eddb7;
+  --color-green-500: #18795b;
+  --color-green-1000: #193d36;
+  --color-amber-000: #f8d49b;
+  --color-amber-1000: #9a6414;
+  --color-red-000: #ffabab;
+  --color-red-330: #b85754;
+  --color-red-670: #ad4a4a;
+  --color-red-1000: #a54150;
+
+  --color-background-canvas: var(--color-neutral-220);
+  --color-background-page: var(--color-neutral-080);
+  --color-surface-default: var(--color-neutral-000);
+  --color-surface-subtle: var(--color-neutral-060);
+  --color-surface-hover: var(--color-neutral-030);
+  --color-text-primary: var(--color-neutral-810);
+  --color-text-secondary: var(--color-neutral-560);
+  --color-text-on-brand: var(--color-neutral-000);
+  --color-text-on-brand-muted: var(--color-neutral-390);
+  --color-text-placeholder: var(--color-neutral-530);
+  --color-border-default: var(--color-neutral-360);
+  --color-border-accent: var(--color-violet-100);
+  --color-brand-foreground: var(--color-violet-760);
+  --color-brand-solid: var(--color-violet-760);
+  --color-brand-subtle: var(--color-neutral-280);
+  --color-success-foreground: var(--color-green-500);
+  --color-success-subtle: var(--color-neutral-170);
+  --color-warning-foreground: var(--color-amber-1000);
+  --color-warning-subtle: var(--color-neutral-110);
+  --color-danger-foreground: var(--color-red-670);
+  --color-danger-solid: var(--color-red-670);
+  --color-danger-subtle: var(--color-neutral-190);
+  --color-danger-icon: var(--color-red-330);
+  --color-disabled-background: var(--color-neutral-310);
+  --color-disabled-indicator: var(--color-neutral-470);
+  --color-overlay-background: var(--color-neutral-920);
+  --color-chart-primary: var(--color-violet-760);
+  --color-chart-secondary: var(--color-violet-140);
+  --color-chart-tertiary: var(--color-violet-330);
+  --color-progress-track: var(--color-neutral-420);
+  --color-skeleton-base: var(--color-neutral-330);
+  --color-skeleton-subtle: var(--color-neutral-250);
+  --color-presentation-background: var(--color-violet-1000);
+  --color-presentation-surface: var(--color-violet-900);
+  --color-presentation-badge-background: var(--color-violet-860);
+  --color-presentation-badge-text: var(--color-violet-050);
+  --color-presentation-text-secondary: var(--color-neutral-440);
+  --color-presentation-eyebrow: var(--color-violet-240);
+  --color-presentation-number: var(--color-violet-380);
+  --color-presentation-icon: var(--color-violet-190);
+  --color-document-background: var(--color-neutral-000);
+  --color-document-text-primary: var(--color-neutral-810);
+  --color-document-text-secondary: var(--color-neutral-560);
+  --color-document-border: var(--color-neutral-360);
+  --color-document-brand: var(--color-violet-760);
+  --color-document-brand-subtle: var(--color-neutral-280);
+  --color-document-success: var(--color-green-500);
+  --color-constant-black: var(--color-neutral-1000);
+  --color-constant-white: var(--color-neutral-000);
   color-scheme: light;
   font-size: 110%;
   font-family: Inter, 'Segoe UI', Arial, sans-serif;
@@ -196,6 +300,41 @@ textarea:focus-visible {
 }
 
 :root.dark-theme {
+  --color-background-canvas: var(--color-neutral-940);
+  --color-background-page: var(--color-neutral-890);
+  --color-surface-default: var(--color-neutral-830);
+  --color-surface-subtle: var(--color-neutral-890);
+  --color-surface-hover: var(--color-neutral-750);
+  --color-text-primary: var(--color-neutral-140);
+  --color-text-secondary: var(--color-neutral-500);
+  --color-text-on-brand-muted: var(--color-neutral-000);
+  --color-text-placeholder: var(--color-violet-430);
+  --color-border-default: var(--color-violet-710);
+  --color-border-accent: var(--color-violet-810);
+  --color-brand-foreground: var(--color-violet-290);
+  --color-brand-solid: var(--color-violet-670);
+  --color-brand-subtle: var(--color-violet-950);
+  --color-success-foreground: var(--color-green-000);
+  --color-success-subtle: var(--color-green-1000);
+  --color-warning-foreground: var(--color-amber-000);
+  --color-warning-subtle: var(--color-neutral-640);
+  --color-danger-foreground: var(--color-red-000);
+  --color-danger-solid: var(--color-red-1000);
+  --color-danger-subtle: var(--color-neutral-720);
+  --color-danger-icon: var(--color-red-000);
+  --color-disabled-background: var(--color-neutral-670);
+  --color-disabled-indicator: var(--color-violet-570);
+  --color-overlay-background: var(--color-neutral-970);
+  --color-chart-primary: var(--color-violet-480);
+  --color-chart-secondary: var(--color-violet-620);
+  --color-chart-tertiary: var(--color-violet-520);
+  --color-progress-track: var(--color-neutral-580);
+  --color-skeleton-base: var(--color-neutral-610);
+  --color-skeleton-subtle: var(--color-neutral-610);
+  --color-presentation-background: var(--color-neutral-860);
+  --color-presentation-surface: var(--color-neutral-780);
+  --color-presentation-badge-background: var(--color-neutral-690);
+  --color-presentation-badge-text: var(--color-violet-000);
   color-scheme: dark;
   background: #202435;
   color: #f3f2fa;

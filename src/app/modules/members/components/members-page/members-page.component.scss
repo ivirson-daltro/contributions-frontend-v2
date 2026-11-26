@@ -148,8 +148,8 @@ select:focus-visible {
 
 .list-title {
   padding: 18px;
-  border-bottom: 1px solid #454c63;
-  color: #6251df;
+  border-bottom: 1px solid var(--color-border-default);
+  color: var(--color-brand-foreground);
 }
 
 .members-filters,

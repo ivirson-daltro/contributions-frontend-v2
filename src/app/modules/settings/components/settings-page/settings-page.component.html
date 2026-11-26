@@ -323,6 +323,46 @@
           Salvar preferências
         </button>
       </form>
+      <section class="panel dashboard-card-settings">
+        <h2>Indicador do painel</h2>
+        <p>Escolha o indicador exibido no último card do painel para toda a igreja.</p>
+        @if (dashboardCardState() === 'loading') {
+          <p role="status">Carregando indicador...</p>
+        } @else if (dashboardCardState() === 'error') {
+          <div role="alert">
+            <p>Não foi possível carregar o indicador do painel.</p>
+            <button type="button" (click)="loadDashboardCard()">Tentar novamente</button>
+          </div>
+        } @else {
+          <form (ngSubmit)="saveDashboardCard()">
+            <div class="grid">
+              <label>
+                Indicador
+                <select
+                  name="dashboardCard"
+                  [ngModel]="dashboardCardSelection()"
+                  (ngModelChange)="dashboardCardSelection.set($event)"
+                  [disabled]="saving()"
+                >
+                  <option value="">Saldo acumulado</option>
+                  @for (type of catalogs()['contribution-types']; track type.id) {
+                    @if (type.active || type.id === savedDashboardCard()) {
+                      <option [value]="type.id" [disabled]="!type.active">
+                        {{ type.description }}{{ type.active ? '' : ' (inativo)' }}
+                      </option>
+                    }
+                  }
+                </select>
+              </label>
+            </div>
+            <p>O total por tipo considera contribuições ativas até hoje, sem descontar despesas.</p>
+            <button class="primary" type="submit"
+              [disabled]="saving() || dashboardCardSelection() === savedDashboardCard()">
+              Salvar indicador
+            </button>
+          </form>
+        }
+      </section>
     } @else if (tab() === 'catalogs') {
       <section class="panel">
         <h2>Catálogos</h2>
